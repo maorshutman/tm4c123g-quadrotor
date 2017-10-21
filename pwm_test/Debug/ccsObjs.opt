@@ -1,0 +1,1 @@
+"./buffer.obj" "./hc12.obj" "./main.obj" "./tm4c123gh6pm_startup_ccs.obj" "/Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/ccs/Debug/driverlib.lib" "../tm4c123gh6pm.cmd" -llibc.a 

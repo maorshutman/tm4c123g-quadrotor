@@ -17,13 +17,6 @@
 #include "escpwm.h"
 
 
-
-//*****************************************************************************
-//
-// Global instance structure for the HC12 driver.
-//
-//*****************************************************************************
-
 int main()
 {
     volatile uint32_t ui32Adjust;
@@ -32,12 +25,11 @@ int main()
     ROM_SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
 
     // DEBUGGING
-    // timer
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_0);
 
     //
-    // Initialize PWM
+    // Initialize PWM.
     //
     InitPWM();
 
@@ -76,15 +68,8 @@ int main()
             ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
         }
 
-        // GPIO_PORTB_DATA_R &= ~0x01;
-
         SysCtlDelay(100000); // every 72 msec
     }
 
     return 0;
 }
-
-void Timer0IntHandler(void)
-{
-}
-

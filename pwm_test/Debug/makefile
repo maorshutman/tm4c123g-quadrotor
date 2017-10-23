@@ -9,6 +9,7 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./buffer.obj" \
+"./escpwm.obj" \
 "./hc12.obj" \
 "./main.obj" \
 "./tm4c123gh6pm_startup_ccs.obj" \
@@ -142,8 +143,8 @@ pwm_test.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "buffer.obj" "hc12.obj" "main.obj" "tm4c123gh6pm_startup_ccs.obj" 
-	-$(RM) "buffer.d" "hc12.d" "main.d" "tm4c123gh6pm_startup_ccs.d" 
+	-$(RM) "buffer.obj" "escpwm.obj" "hc12.obj" "main.obj" "tm4c123gh6pm_startup_ccs.obj" 
+	-$(RM) "buffer.d" "escpwm.d" "hc12.d" "main.d" "tm4c123gh6pm_startup_ccs.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

@@ -5,7 +5,7 @@
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROGRAM.Stellaris In-Circuit Debug Interface_0/CORTEX_M4_0" value="${build_artifact:compdcm_mpu9150}"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.Stellaris In-Circuit Debug Interface_0/CORTEX_M4_0" value="compdcm_mpu9150"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:compdcm_mpu9150}"/>
-<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.Stellaris In-Circuit Debug Interface_0/CORTEX_M4_0" value="/Users/maorshutman/workspace_v7/compdcm_mpu9150/Debug/compdcm_mpu9150.out"/>
+<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.Stellaris In-Circuit Debug Interface_0/CORTEX_M4_0" value="/Users/maorshutman/tm4c123g-quadrotor/compdcm_mpu9150/Debug/compdcm_mpu9150.out"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
 <listEntry value="/compdcm_mpu9150"/>
 </listAttribute>

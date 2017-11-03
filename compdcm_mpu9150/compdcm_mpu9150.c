@@ -39,7 +39,6 @@
 #include "sensorlib/hw_ak8975.h"
 #include "sensorlib/i2cm_drv.h"
 #include "sensorlib/ak8975.h"
-//#include "sensorlib/mpu9150.h"
 #include "mpu9150mod.h"
 #include "comp_dcm.h"
 #include "drivers/rgb.h"
@@ -393,14 +392,14 @@ main(void)
     //
     // The I2C3 peripheral must be enabled before use.
     //
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C3);
-    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C1);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
     //
     // Configure the pin muxing for I2C3 functions on port D0 and D1.
     //
-    ROM_GPIOPinConfigure(GPIO_PD0_I2C3SCL);
-    ROM_GPIOPinConfigure(GPIO_PD1_I2C3SDA);
+    ROM_GPIOPinConfigure(GPIO_PA6_I2C1SCL);
+    ROM_GPIOPinConfigure(GPIO_PA7_I2C1SDA);
 
     //
     // Select the I2C function for these pins.  This function will also
@@ -408,8 +407,8 @@ main(void)
     // open-drain operation with weak pull-ups.  Consult the data sheet
     // to see which functions are allocated per pin.
     //
-    GPIOPinTypeI2CSCL(GPIO_PORTD_BASE, GPIO_PIN_0);
-    ROM_GPIOPinTypeI2C(GPIO_PORTD_BASE, GPIO_PIN_1);
+    GPIOPinTypeI2CSCL(GPIO_PORTA_BASE, GPIO_PIN_6);
+    ROM_GPIOPinTypeI2C(GPIO_PORTA_BASE, GPIO_PIN_7);
 
     //
     // Configure and Enable the GPIO interrupt. Used for INT signal from the
@@ -432,7 +431,7 @@ main(void)
     ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART0);
     ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER0);
     ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER1);
-    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_I2C3);
+    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_I2C1);
     ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_WTIMER5);
 
     //
@@ -443,7 +442,7 @@ main(void)
     //
     // Initialize I2C3 peripheral.
     //
-    I2CMInit(&g_sI2CInst, I2C3_BASE, INT_I2C3, 0xff, 0xff,
+    I2CMInit(&g_sI2CInst, I2C1_BASE, INT_I2C1, 0xff, 0xff,
              ROM_SysCtlClockGet());
 
     //
@@ -516,9 +515,8 @@ main(void)
 
     // DEBUGGING
     // measure time
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
-    GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_4);
-    uint_fast32_t uiWaitCounter = 100;
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+    //GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_4);
 
     while(1)
     {
@@ -561,40 +559,34 @@ main(void)
         //
         // Check if this is our first data ever.
         //
-        if (uiWaitCounter == 0)
+
+        if(ui32CompDCMStarted == 0)
         {
-            if(ui32CompDCMStarted == 0)
-                    {
-                        //
-                        // Set flag indicating that DCM is started.
-                        // Perform the seeding of the DCM with the first data set.
-                        //
-                        ui32CompDCMStarted = 1;
-                        CompDCMMagnetoUpdate(&g_sCompDCMInst, pfMag[0], pfMag[1],
-                                             pfMag[2]);
-                        CompDCMAccelUpdate(&g_sCompDCMInst, pfAccel[0], pfAccel[1],
-                                           pfAccel[2]);
-                        CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
-                                          pfGyro[2]);
-                        CompDCMStart(&g_sCompDCMInst);
-                    }
-                    else
-                    {
-                        //
-                        // DCM Is already started.  Perform the incremental update.
-                        //
-                        CompDCMMagnetoUpdate(&g_sCompDCMInst, pfMag[0], pfMag[1],
-                                             pfMag[2]);
-                        CompDCMAccelUpdate(&g_sCompDCMInst, pfAccel[0], pfAccel[1],
-                                           pfAccel[2]);
-                        CompDCMGyroUpdate(&g_sCompDCMInst, -pfGyro[0], -pfGyro[1],
-                                          -pfGyro[2]);
-                        CompDCMUpdate(&g_sCompDCMInst);
-                    }
+            //
+            // Set flag indicating that DCM is started.
+            // Perform the seeding of the DCM with the first data set.
+            //
+            ui32CompDCMStarted = 1;
+            CompDCMMagnetoUpdate(&g_sCompDCMInst, pfMag[0], pfMag[1],
+                                 pfMag[2]);
+            CompDCMAccelUpdate(&g_sCompDCMInst, pfAccel[0], pfAccel[1],
+                               pfAccel[2]);
+            CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
+                              pfGyro[2]);
+            CompDCMStart(&g_sCompDCMInst);
         }
         else
         {
-            uiWaitCounter--;
+            //
+            // DCM Is already started.  Perform the incremental update.
+            //
+            CompDCMMagnetoUpdate(&g_sCompDCMInst, pfMag[0], pfMag[1],
+                                 pfMag[2]);
+            CompDCMAccelUpdate(&g_sCompDCMInst, pfAccel[0], pfAccel[1],
+                               pfAccel[2]);
+            CompDCMGyroUpdate(&g_sCompDCMInst, -pfGyro[0], -pfGyro[1],
+                              -pfGyro[2]);
+            CompDCMUpdate(&g_sCompDCMInst);
         }
 
         //

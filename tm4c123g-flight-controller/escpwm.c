@@ -71,19 +71,19 @@ InitPWM(void)
       PWMGenPeriodSet(PWM1_BASE, PWM_GEN_1, ui32Load);
 
       // esc 1
-      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 450 * ui32Load / 1000);
+      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 500 * ui32Load / 1000);
       ROM_PWMOutputState(PWM1_BASE, PWM_OUT_0_BIT, true);
 
       // esc 2
-      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 450 * ui32Load / 1000);
+      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 500 * ui32Load / 1000);
       ROM_PWMOutputState(PWM1_BASE, PWM_OUT_1_BIT, true);
 
       // esc 3
-      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 450 * ui32Load / 1000);
+      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 500 * ui32Load / 1000);
       ROM_PWMOutputState(PWM1_BASE, PWM_OUT_2_BIT, true);
 
       // esc 4
-      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 450 * ui32Load / 1000);
+      ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 500 * ui32Load / 1000);
       ROM_PWMOutputState(PWM1_BASE, PWM_OUT_3_BIT, true);
 
       // enable both generators

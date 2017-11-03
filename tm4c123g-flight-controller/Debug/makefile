@@ -123,20 +123,20 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXE_OUTPUTS += \
-pwm_test.out \
+tm4c123g-flight-controller.out \
 
 EXE_OUTPUTS__QUOTED += \
-"pwm_test.out" \
+"tm4c123g-flight-controller.out" \
 
 
 # All Target
-all: pwm_test.out
+all: tm4c123g-flight-controller.out
 
 # Tool invocations
-pwm_test.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
+tm4c123g-flight-controller.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: ARM Linker'
-	"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=PART_TM4C123GH6PM --define=TARGET_IS_BLIZZARD_RB1 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full -z -m"pwm_test.map" --heap_size=0x400 --stack_size=100 -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/lib" -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="pwm_test_linkInfo.xml" --rom_model -o "pwm_test.out" $(ORDERED_OBJS)
+	"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=PART_TM4C123GH6PM --define=TARGET_IS_BLIZZARD_RB1 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full -z -m"tm4c123g-flight-controller.map" --heap_size=0x400 --stack_size=100 -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/lib" -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="tm4c123g-flight-controller_linkInfo.xml" --rom_model -o "tm4c123g-flight-controller.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

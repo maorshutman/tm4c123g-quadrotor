@@ -17,9 +17,14 @@
 #include "escpwm.h"
 
 
+//*****************************************************************************
+//
+// Main application entry point.
+//
+//*****************************************************************************
 int main()
 {
-    volatile uint32_t ui32Adjust;
+    volatile uint32_t ui32Adjust = 500;
 
     ROM_SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
     ROM_SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
@@ -34,7 +39,7 @@ int main()
     InitPWM();
 
     //
-    // UART2 settings.
+    // Initialize UART for radio receiver.
     //
     InitHC12UART();
 
@@ -43,7 +48,7 @@ int main()
         if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
            buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
         {
-            ui32Adjust -= 2;
+            ui32Adjust -= 1;
             if (ui32Adjust < 500)
             {
                 ui32Adjust = 500;
@@ -57,10 +62,10 @@ int main()
         else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
                 buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
         {
-            ui32Adjust += 2;
-            if (ui32Adjust > 900)
+            ui32Adjust += 1;
+            if (ui32Adjust > 990)
             {
-                ui32Adjust = 900;
+                ui32Adjust = 990;
             }
             ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
             ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);

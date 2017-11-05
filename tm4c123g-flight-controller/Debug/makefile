@@ -9,14 +9,20 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./buffer.obj" \
+"./comp_dcm.obj" \
 "./escpwm.obj" \
 "./hc12.obj" \
 "./main.obj" \
+"./mpu9150mod.obj" \
+"./rgb.obj" \
 "./tm4c123gh6pm_startup_ccs.obj" \
+"./uartstdio.obj" \
 "/Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/ccs/Debug/driverlib.lib" \
 "../tm4c123gh6pm.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
+-l"/Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/sensorlib/ccs/Debug/sensorlib.lib" \
+-l"/Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/ccs/Debug/driverlib.lib" \
 
 -include ../makefile.init
 
@@ -136,15 +142,15 @@ all: tm4c123g-flight-controller.out
 tm4c123g-flight-controller.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: ARM Linker'
-	"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=PART_TM4C123GH6PM --define=TARGET_IS_BLIZZARD_RB1 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full -z -m"tm4c123g-flight-controller.map" --heap_size=0x400 --stack_size=100 -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/lib" -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="tm4c123g-flight-controller_linkInfo.xml" --rom_model -o "tm4c123g-flight-controller.out" $(ORDERED_OBJS)
+	"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=ccs="ccs" --define=UART_BUFFERED --define=PART_TM4C123GH6PM --define=TARGET_IS_BLIZZARD_RB1 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full -z -m"tm4c123g-flight-controller.map" --heap_size=0x400 --stack_size=100 -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/lib" -i"/Applications/ti/ccsv7/tools/compiler/arm_5.1.14/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="tm4c123g-flight-controller_linkInfo.xml" --rom_model -o "tm4c123g-flight-controller.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "buffer.obj" "escpwm.obj" "hc12.obj" "main.obj" "tm4c123gh6pm_startup_ccs.obj" 
-	-$(RM) "buffer.d" "escpwm.d" "hc12.d" "main.d" "tm4c123gh6pm_startup_ccs.d" 
+	-$(RM) "buffer.obj" "comp_dcm.obj" "escpwm.obj" "hc12.obj" "main.obj" "mpu9150mod.obj" "rgb.obj" "tm4c123gh6pm_startup_ccs.obj" "uartstdio.obj" 
+	-$(RM) "buffer.d" "comp_dcm.d" "escpwm.d" "hc12.d" "main.d" "mpu9150mod.d" "rgb.d" "tm4c123gh6pm_startup_ccs.d" "uartstdio.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

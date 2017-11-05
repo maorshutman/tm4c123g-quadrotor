@@ -23,7 +23,9 @@
 //*****************************************************************************
 
 #include <stdint.h>
-#include  "hc12.h"
+#include "inc/hw_nvic.h"
+#include "inc/hw_types.h"
+//#include  "hc12.h"
 
 //*****************************************************************************
 //
@@ -42,8 +44,6 @@ static void IntDefaultHandler(void);
 //
 //*****************************************************************************
 extern void _c_int00(void);
-extern void UART2IntHandler(void);
-
 
 //*****************************************************************************
 //
@@ -57,7 +57,11 @@ extern uint32_t __STACK_TOP;
 // External declarations for the interrupt handlers used by the application.
 //
 //*****************************************************************************
-// To be added by user
+extern void IntGPIOb(void);
+extern void UART2IntHandler(void);
+extern void MPU9150I2CIntHandler(void);
+extern void UARTStdioIntHandler(void);
+extern void RGBBlinkIntHandler(void);
 
 //*****************************************************************************
 //
@@ -87,11 +91,11 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // The PendSV handler
     IntDefaultHandler,                      // The SysTick handler
     IntDefaultHandler,                      // GPIO Port A
-    IntDefaultHandler,                      // GPIO Port B
+    IntGPIOb,                               // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                      // UART0 Rx and Tx
+    UARTStdioIntHandler,                      // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
@@ -123,7 +127,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    IntDefaultHandler,                      // I2C1 Master and Slave
+    MPU9150I2CIntHandler,                     // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
@@ -191,7 +195,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Wide Timer 4 subtimer A
     IntDefaultHandler,                      // Wide Timer 4 subtimer B
     IntDefaultHandler,                      // Wide Timer 5 subtimer A
-    IntDefaultHandler,                      // Wide Timer 5 subtimer B
+    RGBBlinkIntHandler,                      // Wide Timer 5 subtimer B
     IntDefaultHandler,                      // FPU
     0,                                      // Reserved
     0,                                      // Reserved

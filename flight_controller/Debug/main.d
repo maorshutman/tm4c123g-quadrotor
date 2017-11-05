@@ -7,7 +7,6 @@ main.obj: /Applications/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.3.LTS/include/ma
 main.obj: /Applications/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.3.LTS/include/linkage.h
 main.obj: /Applications/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.3.LTS/include/_defs.h
 main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/inc/hw_memmap.h
-main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/inc/hw_ints.h
 main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/debug.h
 main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/gpio.h
 main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/interrupt.h
@@ -40,7 +39,6 @@ main.obj: /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/pwm.h
 /Applications/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.3.LTS/include/linkage.h: 
 /Applications/ti/ccsv7/tools/compiler/ti-cgt-arm_16.9.3.LTS/include/_defs.h: 
 /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/inc/hw_memmap.h: 
-/Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/inc/hw_ints.h: 
 /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/debug.h: 
 /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/gpio.h: 
 /Users/maorshutman/ti/TivaWare_C_Series-2.1.3.156/driverlib/interrupt.h: 

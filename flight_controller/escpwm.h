@@ -1,3 +1,6 @@
+#ifndef _ESCPWMH_
+#define _ESCPWMH_
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_memmap.h"
@@ -19,3 +22,5 @@ extern volatile uint32_t ui32Load;
 
 void InitPWM(void);
 void SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle);
+
+#endif

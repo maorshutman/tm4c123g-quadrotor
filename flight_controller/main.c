@@ -352,7 +352,6 @@ ConfigureUART(void)
 void
 ConfigureMPU6050()
 {
-
     //
     // Initialize convenience pointers that clean up and clarify the code
     // meaning. We want all the data in a single contiguous array so that
@@ -517,8 +516,46 @@ ConfigureMPU6050()
     RGBBlinkRateSet(1.0f);
 
     ui32CompDCMStarted = 0;
+}
 
+//*****************************************************************************
+//
+// Measures gyro bias.
+//
+//*****************************************************************************
+void
+CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
+{
+    float gyro[3];
+    float bias[3] = {};
+    int n = 2000;
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        while(!g_vui8I2CDoneFlag)
+        {
+            ROM_SysCtlSleep();
+        }
 
+        //
+        // Clear the flag
+        //
+        g_vui8I2CDoneFlag = 0;
+
+        //
+        // Get floating point version of angular velocities in rad/sec
+        //
+        MPU9150DataGyroGetFloat(&g_sMPU9150Inst, gyro, gyro + 1,
+                                gyro + 2);
+
+        bias[0] += gyro[0];
+        bias[1] += gyro[1];
+        bias[2] += gyro[2];
+    }
+
+    *biasWx = bias[0] / n;
+    *biasWy = bias[1] / n;
+    *biasWz = bias[2] / n;
 }
 
 //*****************************************************************************
@@ -553,6 +590,16 @@ main(void)
     // Configures mpu6050 module and UART for display.
     //
     ConfigureMPU6050();
+
+    //
+    // Measures gyro bias.
+    //
+    CalibrateGyro(g_sCompDCMInst.fBias, g_sCompDCMInst.fBias + 1,
+                  g_sCompDCMInst.fBias + 2);
+
+    // DEBUGGING
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+    GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
 
     while(1)
     {
@@ -645,8 +692,8 @@ main(void)
                                  pfMag[2]);
             CompDCMAccelUpdate(&g_sCompDCMInst, pfAccel[0], pfAccel[1],
                                pfAccel[2]);
-            CompDCMGyroUpdate(&g_sCompDCMInst, -pfGyro[0], -pfGyro[1],
-                              -pfGyro[2]);
+            CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
+                              pfGyro[2]);
             CompDCMUpdate(&g_sCompDCMInst);
         }
 
@@ -657,6 +704,9 @@ main(void)
         g_ui32PrintSkipCounter++;
         if(g_ui32PrintSkipCounter >= PRINT_SKIP_COUNT)
         {
+            // DEBUGGING
+            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
+
             //
             // Reset skip counter.
             //
@@ -665,11 +715,8 @@ main(void)
             //
             // Get Euler data. (Roll Pitch Yaw)
             //
-            //CompDCMComputeEulers(&g_sCompDCMInst, pfEulers, pfEulers + 1,
-            //                     pfEulers + 2);
-            pfEulers[0] = g_sCompDCMInst.fEuler[0];
-            pfEulers[1] = g_sCompDCMInst.fEuler[1];
-            pfEulers[2] = g_sCompDCMInst.fEuler[2];
+            CompDCMComputeEulers(&g_sCompDCMInst, pfEulers, pfEulers + 1,
+                                 pfEulers + 2);
 
             //
             // Get Quaternions.
@@ -764,6 +811,9 @@ main(void)
             UARTprintf("\033[19;32H%3d.%03d", i32IPart[13], i32FPart[13]);
             UARTprintf("\033[19;50H%3d.%03d", i32IPart[14], i32FPart[14]);
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
+
+            // DEBUGGING
+            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
        }
     }
 

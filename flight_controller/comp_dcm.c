@@ -176,9 +176,9 @@ CompDCMGyroUpdate(tCompDCM *psDCM, float fGyroX, float fGyroY, float fGyroZ)
     //
     // Save the new gyroscope reading.
     //
-    psDCM->pfGyro[0] = fGyroX;
-    psDCM->pfGyro[1] = fGyroY;
-    psDCM->pfGyro[2] = fGyroZ;
+    psDCM->pfGyro[0] = fGyroX - psDCM->fBias[0];
+    psDCM->pfGyro[1] = fGyroY - psDCM->fBias[1];
+    psDCM->pfGyro[2] = fGyroZ - psDCM->fBias[2];
 }
 
 //*****************************************************************************
@@ -391,15 +391,21 @@ CompDCMUpdate(tCompDCM *psDCM)
     // Multiply DCM matrix by incrementing matrix.
     //
     int i,j;
+    float tempDCM[3][3];
     for (i = 0; i < 3; i++)
     {
         for (j = 0; j < 3; j++)
         {
-            psDCM->ppfDCM[i][j] = psDCM->ppfDCM[i][0] * inc[0][j] +
+            tempDCM[i][j] = psDCM->ppfDCM[i][0] * inc[0][j] +
                     psDCM->ppfDCM[i][1] * inc[1][j] +
                     psDCM->ppfDCM[i][2] * inc[2][j];
         }
     }
+
+    // Update DCM.
+    for (i = 0; i < 3; i++)
+          for (j = 0; j < 3; j++)
+              psDCM->ppfDCM[i][j] = tempDCM[i][j];
 
     //
     // Updates Euler angles.

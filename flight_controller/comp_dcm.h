@@ -51,14 +51,14 @@ typedef struct
     float ppfDCM[3][3];
 
     //
-    // quaternion
-    //
-    float q[4];
-
-    //
-    // eulers
+    // Euler angles.
     //
     float fEuler[3];
+
+    //
+    // Gyro bias.
+    //
+    float fBias[3];
 
     //
     // The time delta between updates to the DCM.
@@ -95,8 +95,6 @@ typedef struct
     // The most recent magnetometer readings.
     //
     float pfMagneto[3];
-
-
 }
 tCompDCM;
 

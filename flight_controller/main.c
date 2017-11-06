@@ -138,6 +138,16 @@ uint32_t g_ui32PrintSkipCounter;
 
 //*****************************************************************************
 //
+// Global variables for UART printing.
+//
+//*****************************************************************************
+int_fast32_t i32IPart[16], i32FPart[16];
+uint_fast32_t ui32Idx, ui32CompDCMStarted;
+float pfData[16];
+float *pfAccel, *pfGyro, *pfMag, *pfEulers, *pfQuaternion;
+
+//*****************************************************************************
+//
 // The error routine that is called if the driver library encounters an error.
 //
 //*****************************************************************************
@@ -336,19 +346,12 @@ ConfigureUART(void)
 
 //*****************************************************************************
 //
-// Main application entry point.
+// Configure the mpu6050 module.
 //
 //*****************************************************************************
-
-int
-main(void)
+void
+ConfigureMPU6050()
 {
-    volatile uint32_t ui32Adjust = 500;
-
-    int_fast32_t i32IPart[16], i32FPart[16];
-    uint_fast32_t ui32Idx, ui32CompDCMStarted;
-    float pfData[16];
-    float *pfAccel, *pfGyro, *pfMag, *pfEulers, *pfQuaternion;
 
     //
     // Initialize convenience pointers that clean up and clarify the code
@@ -360,23 +363,6 @@ main(void)
     pfMag = pfData + 6;
     pfEulers = pfData + 9;
     pfQuaternion = pfData + 12;
-
-    //
-    // Setup the system clock to run at 40 Mhz from PLL with crystal reference
-    //
-    ROM_SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
-                       SYSCTL_OSC_MAIN);
-    ROM_SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
-
-    //
-    // Initialize PWM.
-    //
-    InitPWM();
-
-    //
-    // Initialize UART for radio receiver.
-    //
-    InitHC12UART();
 
     //
     // Enable port B used for motion interrupt.
@@ -445,13 +431,13 @@ main(void)
     // TIMER0, TIMER1 and WTIMER5 are used by the RGB driver
     // I2C3 is the I2C interface to the ISL29023
     //
-//    ROM_SysCtlPeripheralClockGating(true);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOB);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART0);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER0);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER1);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_I2C1);
-//    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_WTIMER5);
+    //    ROM_SysCtlPeripheralClockGating(true);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOB);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART0);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER0);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_TIMER1);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_I2C1);
+    //    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_WTIMER5);
 
     //
     // Enable interrupts to the processor.
@@ -482,7 +468,7 @@ main(void)
     g_sMPU9150Inst.pui8Data[0] = MPU9150_CONFIG_DLPF_CFG_94_98;
     g_sMPU9150Inst.pui8Data[1] = MPU9150_GYRO_CONFIG_FS_SEL_250;
     g_sMPU9150Inst.pui8Data[2] = (MPU9150_ACCEL_CONFIG_ACCEL_HPF_5HZ |
-                                  MPU9150_ACCEL_CONFIG_AFS_SEL_2G);
+            MPU9150_ACCEL_CONFIG_AFS_SEL_2G);
     MPU9150Write(&g_sMPU9150Inst, MPU9150_O_CONFIG, g_sMPU9150Inst.pui8Data, 3,
                  MPU9150AppCallback, &g_sMPU9150Inst);
 
@@ -495,8 +481,8 @@ main(void)
     // Configure the data ready interrupt pin output of the MPU9150.
     //
     g_sMPU9150Inst.pui8Data[0] = MPU9150_INT_PIN_CFG_INT_LEVEL |
-                                 MPU9150_INT_PIN_CFG_INT_RD_CLEAR |
-                                 MPU9150_INT_PIN_CFG_LATCH_INT_EN;
+            MPU9150_INT_PIN_CFG_INT_RD_CLEAR |
+            MPU9150_INT_PIN_CFG_LATCH_INT_EN;
     g_sMPU9150Inst.pui8Data[1] = MPU9150_INT_ENABLE_DATA_RDY_EN;
     MPU9150Write(&g_sMPU9150Inst, MPU9150_O_INT_PIN_CFG,
                  g_sMPU9150Inst.pui8Data, 2, MPU9150AppCallback,
@@ -522,7 +508,7 @@ main(void)
     UARTprintf("Eulers\033[8G|\033[31G|\033[54G|\n\n");
 
     UARTprintf("\n\033[17GQ1\033[26G|\033[35GQ2\033[44G|\033[53GQ3\033[62G|"
-               "\033[71GQ4\n\n");
+            "\033[71GQ4\n\n");
     UARTprintf("Q\033[8G|\033[26G|\033[44G|\033[62G|\n\n");
 
     //
@@ -531,6 +517,42 @@ main(void)
     RGBBlinkRateSet(1.0f);
 
     ui32CompDCMStarted = 0;
+
+
+}
+
+//*****************************************************************************
+//
+// Main application entry point.
+//
+//*****************************************************************************
+
+int
+main(void)
+{
+    volatile uint32_t ui32Adjust = 500;
+
+    //
+    // Setup the system clock to run at 40 Mhz from PLL with crystal reference
+    //
+    ROM_SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
+                       SYSCTL_OSC_MAIN);
+    ROM_SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
+
+    //
+    // Initialize PWM.
+    //
+    InitPWM();
+
+    //
+    // Initialize UART for radio receiver.
+    //
+    InitHC12UART();
+
+    //
+    // Configures mpu6050 module and UART for display.
+    //
+    ConfigureMPU6050();
 
     while(1)
     {
@@ -564,10 +586,6 @@ main(void)
         }
 
         // Reads IMU data.
-        //
-        // Go to sleep mode while waiting for data ready.
-        //
-
         //
         // Go to sleep mode while waiting for data ready.
         //
@@ -657,10 +675,6 @@ main(void)
             // Get Quaternions.
             //
             CompDCMComputeQuaternion(&g_sCompDCMInst, pfQuaternion);
-//            pfQuaternion[0] = g_sCompDCMInst.q[0];
-//            pfQuaternion[1] = g_sCompDCMInst.q[1];
-//            pfQuaternion[2] = g_sCompDCMInst.q[2];
-//            pfQuaternion[3] = g_sCompDCMInst.q[3];
 
             //
             // convert mag data to micro-tesla for better human interpretation.

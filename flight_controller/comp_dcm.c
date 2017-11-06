@@ -261,14 +261,14 @@ CompDCMStart(tCompDCM *psDCM)
     float gammaAngle = atan2f(r32 / cosf(betaAngle), r33 / cosf(betaAngle));
 
     //
-    // updates initial eulers
+    // Updates initial Euler angles.
     //
     psDCM->fEuler[0] = gammaAngle;
     psDCM->fEuler[1] = -betaAngle;
     psDCM->fEuler[2] = 0.0f;
 
     //
-    // updates dcm
+    // Updates the initial DCM.
     //
     psDCM->ppfDCM[0][0] = cosf(betaAngle);
     psDCM->ppfDCM[0][1] = sinf(betaAngle) * sinf(gammaAngle);
@@ -279,11 +279,6 @@ CompDCMStart(tCompDCM *psDCM)
     psDCM->ppfDCM[2][0] = r31;
     psDCM->ppfDCM[2][1] = r32;
     psDCM->ppfDCM[2][2] = r33;
-
-    //
-    // updates quaternion
-    //
-    CompDCMComputeQuaternion(psDCM, psDCM->q);
 }
 
 //*****************************************************************************
@@ -306,8 +301,6 @@ void
 CompDCMUpdate(tCompDCM *psDCM)
 {
     bool bNAN;
-
-    //
 
     //
     // Determine if the newly updated DCM contains any invalid (in other words,
@@ -347,6 +340,72 @@ CompDCMUpdate(tCompDCM *psDCM)
         psDCM->ppfDCM[2][1] = 0.0;
         psDCM->ppfDCM[2][2] = 1.0;
     }
+
+    float sigma = sqrtf(psDCM->pfGyro[0] * psDCM->pfGyro[0] +
+                        psDCM->pfGyro[1] * psDCM->pfGyro[1] +
+                        psDCM->pfGyro[2] * psDCM->pfGyro[2]) * psDCM->fDeltaT;
+    float bFactor = sinf(sigma) / sigma;
+    float bSqFactor = (1 - cosf(sigma)) / (sigma * sigma);
+
+    // B matrix.
+    float b[3][3];
+    b[0][0] = 0.0;
+    b[0][1] = -psDCM->pfGyro[2];
+    b[0][2] = psDCM->pfGyro[1];
+    b[1][0] = psDCM->pfGyro[2];
+    b[1][1] = 0.0;
+    b[1][2] = -psDCM->pfGyro[0];
+    b[2][0] = -psDCM->pfGyro[1];
+    b[2][1] = psDCM->pfGyro[0];
+    b[2][2] = 0.0;
+
+    // B^2 matrix.
+    float bSq[3][3];
+    bSq[0][0] = -psDCM->pfGyro[1] * psDCM->pfGyro[1] -
+                   psDCM->pfGyro[2] * psDCM->pfGyro[2];
+    bSq[0][1] = psDCM->pfGyro[0] * psDCM->pfGyro[1];
+    bSq[0][2] = psDCM->pfGyro[0] * psDCM->pfGyro[2];
+    bSq[1][0] = psDCM->pfGyro[0] * psDCM->pfGyro[1];
+    bSq[1][1] = -psDCM->pfGyro[0] * psDCM->pfGyro[0] -
+            psDCM->pfGyro[2] * psDCM->pfGyro[2];
+    bSq[1][2] = psDCM->pfGyro[1] * psDCM->pfGyro[2];
+    bSq[2][0] = psDCM->pfGyro[0] * psDCM->pfGyro[2];
+    bSq[2][1] = psDCM->pfGyro[1] * psDCM->pfGyro[2];
+    bSq[2][2] = -psDCM->pfGyro[0] * psDCM->pfGyro[0] -
+            psDCM->pfGyro[1] * psDCM->pfGyro[1];
+
+    // Incrementing matrix.
+    float inc[3][3];
+    float dt = psDCM->fDeltaT;
+    inc[0][0] = 1.0 + dt * bFactor * b[0][0] + dt * dt * bSqFactor * bSq[0][0];
+    inc[0][1] = dt * bFactor * b[0][1] + dt * dt * bSqFactor * bSq[0][1];
+    inc[0][2] = dt * bFactor * b[0][2] + dt * dt * bSqFactor * bSq[0][2];
+    inc[1][0] = dt * bFactor * b[1][0] + dt * dt * bSqFactor * bSq[1][0];
+    inc[1][1] = 1.0 + dt * bFactor * b[1][1] + dt * dt * bSqFactor * bSq[1][1];
+    inc[1][2] = dt * bFactor * b[1][2] + dt * dt * bSqFactor * bSq[1][2];
+    inc[2][0] = dt * bFactor * b[2][0] + dt * dt * bSqFactor * bSq[2][0];
+    inc[2][1] = dt * bFactor * b[2][1] + dt * dt * bSqFactor * bSq[2][1];
+    inc[2][2] = 1.0 + dt * bFactor * b[2][2] + dt * dt * bSqFactor * bSq[2][2];
+
+    //
+    // Multiply DCM matrix by incrementing matrix.
+    //
+    int i,j;
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            psDCM->ppfDCM[i][j] = psDCM->ppfDCM[i][0] * inc[0][j] +
+                    psDCM->ppfDCM[i][1] * inc[1][j] +
+                    psDCM->ppfDCM[i][2] * inc[2][j];
+        }
+    }
+
+    //
+    // Updates Euler angles.
+    //
+    CompDCMComputeEulers(psDCM, psDCM->fEuler, psDCM->fEuler + 1,
+                         psDCM->fEuler + 2);
 }
 
 //*****************************************************************************

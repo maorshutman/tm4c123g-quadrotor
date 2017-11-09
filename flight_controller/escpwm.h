@@ -16,11 +16,38 @@
 #include "driverlib/uart.h"
 #include "driverlib/pwm.h"
 
+//*****************************************************************************
+//
+// ESCs state.
+//
+//*****************************************************************************
+typedef struct
+{
+    //
+    //
+    //
+    uint32_t ui32PWMClock;
+
+    //
+    //
+    //
+    uint32_t ui32Period;
+
+    //
+    //
+    //
+    uint32_t ui32Load;
+
+    //
+    //
+    //
+    float dutyCycles[4];
+}
+tPWM;
+
 #define PWM_FREQUENCY 490
 
-extern volatile uint32_t ui32Load;
-
-void InitPWM(void);
-void SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle);
+void InitPWM(tPWM * psPWM);
+void SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle, tPWM * psPWM);
 
 #endif

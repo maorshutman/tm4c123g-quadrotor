@@ -108,6 +108,13 @@ tCompDCM g_sCompDCMInst;
 
 //*****************************************************************************
 //
+// Global Instance structure to manage the PWM state.
+//
+//*****************************************************************************
+tPWM * g_sPWMInst;
+
+//*****************************************************************************
+//
 // Global flags to alert main that MPU9150 I2C transaction is complete
 //
 //*****************************************************************************
@@ -528,7 +535,7 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 {
     float gyro[3];
     float bias[3] = {};
-    int n = 2000;
+    int n = 3000;
     int i;
     for (i = 0; i < n; i++)
     {
@@ -579,7 +586,7 @@ main(void)
     //
     // Initialize PWM.
     //
-    InitPWM();
+    InitPWM(g_sPWMInst);
 
     //
     // Initialize UART for radio receiver.
@@ -603,34 +610,34 @@ main(void)
 
     while(1)
     {
-        // Updates ESCs via radio.
-        if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
-                buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
-        {
-            ui32Adjust -= 1;
-            if (ui32Adjust < 500)
-            {
-                ui32Adjust = 500;
-            }
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
-        }
-
-        else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
-                buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
-        {
-            ui32Adjust += 1;
-            if (ui32Adjust > 990)
-            {
-                ui32Adjust = 990;
-            }
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
-        }
+//        // Updates ESCs via radio.
+//        if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
+//                buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
+//        {
+//            ui32Adjust -= 1;
+//            if (ui32Adjust < 500)
+//            {
+//                ui32Adjust = 500;
+//            }
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
+//        }
+//
+//        else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
+//                buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
+//        {
+//            ui32Adjust += 1;
+//            if (ui32Adjust > 990)
+//            {
+//                ui32Adjust = 990;
+//            }
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
+//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
+//        }
 
         // Reads IMU data.
         //
@@ -694,7 +701,11 @@ main(void)
                                pfAccel[2]);
             CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
                               pfGyro[2]);
+            // DEBUGGING
+            GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
             CompDCMUpdate(&g_sCompDCMInst);
+            // DEBUGGING
+            GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
         }
 
         //
@@ -704,9 +715,6 @@ main(void)
         g_ui32PrintSkipCounter++;
         if(g_ui32PrintSkipCounter >= PRINT_SKIP_COUNT)
         {
-            // DEBUGGING
-            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
-
             //
             // Reset skip counter.
             //
@@ -811,9 +819,6 @@ main(void)
             UARTprintf("\033[19;32H%3d.%03d", i32IPart[13], i32FPart[13]);
             UARTprintf("\033[19;50H%3d.%03d", i32IPart[14], i32FPart[14]);
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
-
-            // DEBUGGING
-            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
        }
     }
 

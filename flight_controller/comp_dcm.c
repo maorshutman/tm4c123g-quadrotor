@@ -47,9 +47,12 @@
 #define M_PI                    3.14159265358979323846
 #endif
 
-#define deltat 0.004f                                     // sampling period in seconds (shown as 1 ms)
-#define gyroMeasError 3.14159265358979f * (5.0f / 180.0f) // gyroscope measurement error in rad/s (shown as 5 deg/s)
-#define beta sqrt(3.0f / 4.0f) * gyroMeasError            // compute beta
+//*****************************************************************************
+//
+// Weight for complementary filter.
+//
+//*****************************************************************************
+#define COMP_FACTOR             0.04
 
 //*****************************************************************************
 //
@@ -240,7 +243,6 @@ CompDCMStart(tCompDCM *psDCM)
     //
     // The size of gravity when the body is at rest.
     //
-
     float g = sqrt(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
                    psDCM->pfAccel[1] * psDCM->pfAccel[1] +
                    psDCM->pfAccel[2] * psDCM->pfAccel[2]);
@@ -392,20 +394,51 @@ CompDCMUpdate(tCompDCM *psDCM)
     //
     int i,j;
     float tempDCM[3][3];
-    for (i = 0; i < 3; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
             tempDCM[i][j] = psDCM->ppfDCM[i][0] * inc[0][j] +
-                    psDCM->ppfDCM[i][1] * inc[1][j] +
-                    psDCM->ppfDCM[i][2] * inc[2][j];
+                psDCM->ppfDCM[i][1] * inc[1][j] +
+                psDCM->ppfDCM[i][2] * inc[2][j];
         }
     }
 
-    // Update DCM.
-    for (i = 0; i < 3; i++)
-          for (j = 0; j < 3; j++)
-              psDCM->ppfDCM[i][j] = tempDCM[i][j];
+    //
+    // The size of gravity when the body is at rest.
+    //
+    float g = sqrt(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
+                   psDCM->pfAccel[1] * psDCM->pfAccel[1] +
+                   psDCM->pfAccel[2] * psDCM->pfAccel[2]);
+
+    //
+    // Attitude evaluation via gravity vector.
+    //
+    float r31 = -psDCM->pfAccel[0] / g;
+    float r32 = psDCM->pfAccel[1] / g;
+    float r33 = psDCM->pfAccel[2] / g;
+    float r11 = sqrtf(1.0f - r31 * r31);
+
+    float alpha = atan2f(tempDCM[1][0], tempDCM[0][0]);
+    float beta = atan2f(-r31 , r11);
+    float gamma = atan2f(r32 / cosf(beta), r33 / cosf(beta));
+
+    float accDCM[3][3];
+    accDCM[0][0] = cosf(alpha) * cosf(beta);
+    accDCM[0][1] = cosf(alpha) * sinf(beta) * sinf(gamma) - sinf(alpha) * cosf(gamma);
+    accDCM[0][2] = cosf(alpha) * sinf(beta) * cosf(gamma) + sinf(alpha) * sinf(gamma);
+    accDCM[1][0] = sinf(alpha) * cosf(beta);
+    accDCM[1][1] = sinf(alpha) * sinf(beta) * sinf(gamma) + cosf(alpha) * cosf(gamma);
+    accDCM[1][2] = sinf(alpha) * sinf(beta) * cosf(gamma) - cosf(alpha) * sinf(gamma);
+    accDCM[2][0] = -sinf(beta);
+    accDCM[2][1] = cosf(beta) * sinf(gamma);
+    accDCM[2][2] = cosf(beta) * cosf(gamma);
+
+    // Update DCM using a complementary filter.
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            psDCM->ppfDCM[i][j] = (1 - COMP_FACTOR) * tempDCM[i][j] +
+                    COMP_FACTOR * accDCM[i][j];
+        }
+    }
 
     //
     // Updates Euler angles.

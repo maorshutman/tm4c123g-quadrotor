@@ -1,8 +1,5 @@
 #include "escpwm.h"
 
-volatile uint32_t ui32Load;
-
-
 //*****************************************************************************
 //
 //!
@@ -16,11 +13,8 @@ volatile uint32_t ui32Load;
 //
 //*****************************************************************************
 void
-InitPWM(void)
+InitPWM(tPWM * psPWM)
 {
-    volatile uint32_t ui32PWMClock;
-    volatile uint32_t ui32Period;
-
     // PWM module 1
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1);
 
@@ -47,31 +41,31 @@ InitPWM(void)
     ROM_GPIOPinConfigure(GPIO_PE5_M1PWM3);
 
     // PWM frequency
-    ui32PWMClock = SysCtlClockGet() / 64;
-    ui32Load = (ui32PWMClock / PWM_FREQUENCY) - 1;
+    psPWM->ui32PWMClock = SysCtlClockGet() / 64;
+    psPWM->ui32Load = (psPWM->ui32PWMClock / PWM_FREQUENCY) - 1;
 
     // PWM generator 0
     PWMGenConfigure(PWM1_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN);
-    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_0, ui32Load);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_0, psPWM->ui32Load);
 
     // PWM generator 1
     PWMGenConfigure(PWM1_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN);
-    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_1, ui32Load);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_1, psPWM->ui32Load);
 
     // esc 1
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 500 * ui32Load / 1000);
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_0_BIT, true);
 
     // esc 2
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 500 * ui32Load / 1000);
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_1_BIT, true);
 
     // esc 3
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 500 * ui32Load / 1000);
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_2_BIT, true);
 
     // esc 4
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 500 * ui32Load / 1000);
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_3_BIT, true);
 
     // enable both generators
@@ -93,21 +87,29 @@ InitPWM(void)
 //
 //*****************************************************************************
 void
-SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle)
+SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle, tPWM * psPWM)
 {
     switch (motorNumber)
     {
     case 0:
-        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, dutyCycle * ui32Load);
+        psPWM->dutyCycles[0] = dutyCycle;
+        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0,
+                             dutyCycle * psPWM->ui32Load);
         break;
     case 1:
-        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, dutyCycle * ui32Load);
+        psPWM->dutyCycles[1] = dutyCycle;
+        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1,
+                             dutyCycle * psPWM->ui32Load);
         break;
     case 2:
-        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, dutyCycle * ui32Load);
+        psPWM->dutyCycles[2] = dutyCycle;
+        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2,
+                             dutyCycle * psPWM->ui32Load);
         break;
     case 3:
-        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, dutyCycle * ui32Load);
+        psPWM->dutyCycles[3] = dutyCycle;
+        ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3,
+                             dutyCycle * psPWM->ui32Load);
         break;
     }
 }

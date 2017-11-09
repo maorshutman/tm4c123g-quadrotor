@@ -9,6 +9,7 @@ CMD_SRCS += \
 C_SRCS += \
 ../buffer.c \
 ../comp_dcm.c \
+../controller.c \
 ../escpwm.c \
 ../hc12.c \
 ../main.c \
@@ -18,6 +19,7 @@ C_SRCS += \
 C_DEPS += \
 ./buffer.d \
 ./comp_dcm.d \
+./controller.d \
 ./escpwm.d \
 ./hc12.d \
 ./main.d \
@@ -27,6 +29,7 @@ C_DEPS += \
 OBJS += \
 ./buffer.obj \
 ./comp_dcm.obj \
+./controller.obj \
 ./escpwm.obj \
 ./hc12.obj \
 ./main.obj \
@@ -36,6 +39,7 @@ OBJS += \
 OBJS__QUOTED += \
 "buffer.obj" \
 "comp_dcm.obj" \
+"controller.obj" \
 "escpwm.obj" \
 "hc12.obj" \
 "main.obj" \
@@ -45,6 +49,7 @@ OBJS__QUOTED += \
 C_DEPS__QUOTED += \
 "buffer.d" \
 "comp_dcm.d" \
+"controller.d" \
 "escpwm.d" \
 "hc12.d" \
 "main.d" \
@@ -54,6 +59,7 @@ C_DEPS__QUOTED += \
 C_SRCS__QUOTED += \
 "../buffer.c" \
 "../comp_dcm.c" \
+"../controller.c" \
 "../escpwm.c" \
 "../hc12.c" \
 "../main.c" \

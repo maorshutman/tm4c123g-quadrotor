@@ -39,8 +39,8 @@
 #define I_XX                0.00884 // kg * m^2
 #define I_YY                0.00884 // kg * m^2
 #define I_ZZ                0.0165 // kg * m^2
-#define MAX_MOTOR_GAMMA     (2.0 * M_PI * 6360 / 60)^2 // max motor rpm
-#define K                   (0.62 * 9.81) / ((2 * M_PI * 6360 / 60)^2) // N * Hz^-2
+#define MAX_MOTOR_GAMMA     pow(2.0 * M_PI * 6360 / 60, 2) // max motor rpm
+#define K                   (0.62 * 9.81) / pow(2 * M_PI * 6360 / 60, 2) // N * Hz^-2
 
 //*****************************************************************************
 //
@@ -52,48 +52,42 @@
 
 //*****************************************************************************
 //
-//! ???
-//!
+// ???
 //
 //*****************************************************************************
 void
-error_to_input(tPDController * psPD, tCompDCM * psDCM)
+errorToInput(tPDController * psPD, tCompDCM * psDCM)
 {
-//    float total_thrust = m * g /
-//            (4.0 * K * cosf(state.phi) * cosf(state.theta));
-//
-//    // PD errors
-//    float e_phi = -KP * (state.phi_des - state.phi) +
-//            -KD * (0.0 - state.phi_dot);
-//    float e_theta = -KP * (state.theta_des - state.theta) +
-//            -KD * (0.0 - state.theta_dot);
-//    float e_psi = -KP * (state.psi_des - state.psi) +
-//            -KD * (0.0 - state.psi_dot);
-//
-//    // gamma_i = omega_i^2
-//    float gamma[4];
-//    gamma[0] = total_thrust -
-//            (2 * b * I_XX * e_phi + K * ARM_LENGTH * I_ZZ * e_psi) /
-//            (4.0 * b * K * ARM_LENGTH);
-//
-//    gamma[1] = total_thrust + I_ZZ * e_psi / (4.0 * b) -
-//            I_YY * e_theta / (2.0 * K * ARM_LENGTH);
-//
-//    gamma[2] = total_thrust -
-//            (-2 * b * I_XX * e_phi + K * ARM_LENGTH * I_ZZ * e_psi) /
-//                    (4.0 * b * K * ARM_LENGTH);
-//
-//    gamma[3] = total_thrust + I_ZZ * e_psi / (4.0 * b) +
-//            I_YY * e_theta / (2.0 * K * ARM_LENGTH);
-//
-//    // limit motor angular velocity
-//    if (gamma[0] > MAX_MOTOR_GAMMA)    gamma[0] = MAX_MOTOR_GAMMA;
-//    if (gamma[1] > MAX_MOTOR_GAMMA)    gamma[1] = MAX_MOTOR_GAMMA;
-//    if (gamma[2] > MAX_MOTOR_GAMMA)    gamma[2] = MAX_MOTOR_GAMMA;
-//    if (gamma[3] > MAX_MOTOR_GAMMA)    gamma[3] = MAX_MOTOR_GAMMA;
-//
-//    pdCont->fGamma[0] = gamma[0];
-//    pdCont->fGamma[1] = gamma[1];
-//    pdCont->fGamma[2] = gamma[2];
-//    pdCont->fGamma[3] = gamma[3];
+    float totalThrust = m * g /
+            (K * cosf(psDCM->fEuler[0]) * cosf(psDCM->fEuler[1]));
+
+    // PD errors
+    float eAlpha = -KP * (psPD->fDesState[2] - psDCM->fEuler[2]) +
+            -KD * (0.0 - psDCM->pfGyro[2]);
+    float eBeta = -KP * (psPD->fDesState[1] - psDCM->fEuler[1]) +
+            -KD * (0.0 - psDCM->pfGyro[1]);
+    float eGamma = -KP * (psPD->fDesState[0] - psDCM->fEuler[0]) +
+            -KD * (0.0 - psDCM->pfGyro[0]);
+
+
+    float torqGamma = -I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
+    float torqBeta = -I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
+    float torqAlpha = -I_ZZ * eAlpha / b;
+
+    float omegaSq[4];
+    omegaSq[0] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
+    omegaSq[0] = (totalThrust - torqGamma - torqBeta + torqAlpha) / 4.0;
+    omegaSq[2] = (totalThrust + torqGamma - torqBeta - torqAlpha) / 4.0;
+    omegaSq[3] = (totalThrust - torqGamma + torqBeta - torqAlpha) / 4.0;
+
+    // limit motor angular velocity
+    if (omegaSq[0] > MAX_MOTOR_GAMMA)    omegaSq[0] = MAX_MOTOR_GAMMA;
+    if (omegaSq[1] > MAX_MOTOR_GAMMA)    omegaSq[1] = MAX_MOTOR_GAMMA;
+    if (omegaSq[2] > MAX_MOTOR_GAMMA)    omegaSq[2] = MAX_MOTOR_GAMMA;
+    if (omegaSq[3] > MAX_MOTOR_GAMMA)    omegaSq[3] = MAX_MOTOR_GAMMA;
+
+    psPD->fOmegaSq[0] = omegaSq[0];
+    psPD->fOmegaSq[1] = omegaSq[1];
+    psPD->fOmegaSq[2] = omegaSq[2];
+    psPD->fOmegaSq[3] = omegaSq[3];
 }

@@ -614,28 +614,28 @@ main(void)
         if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
                 buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
         {
-            dcycle -= 0.0001;
+            dcycle -= 0.001;
             if (dcycle < 0.5)
             {
                 dcycle = 0.5;
             }
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, dcycle * g_sPWMInst.ui32Load);
+            SetMotorPulseWidth(0, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(1, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(2, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(3, dcycle, &g_sPWMInst);
         }
         else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
                 buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
         {
-            dcycle += 0.0001;
+            dcycle += 0.001;
             if (dcycle > 0.99)
             {
                 dcycle = 0.99;
             }
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, dcycle * g_sPWMInst.ui32Load);
-            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, dcycle * g_sPWMInst.ui32Load);
+            SetMotorPulseWidth(0, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(1, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(2, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(3, dcycle, &g_sPWMInst);
         }
 
         // Reads IMU data.

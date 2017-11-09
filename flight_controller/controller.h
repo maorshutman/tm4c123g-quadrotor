@@ -32,12 +32,12 @@ typedef struct
     //
     //
     //
-    float fDutyCyle[4];
+    float fDutyCycle[4];
 
     //
     //
     //
-    float fGamma[4];
+    float fOmegaSq[4];
 
     //
     // desired
@@ -51,7 +51,7 @@ tPDController;
 // Prototypes.
 //
 //*****************************************************************************
-extern void error_to_input(tPDController * psPD, tCompDCM * psDCM);
+extern void errorToInput(tPDController * psPD, tCompDCM * psDCM);
 
 //*****************************************************************************
 //

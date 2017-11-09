@@ -111,7 +111,7 @@ tCompDCM g_sCompDCMInst;
 // Global Instance structure to manage the PWM state.
 //
 //*****************************************************************************
-tPWM * g_sPWMInst;
+tPWM g_sPWMInst;
 
 //*****************************************************************************
 //
@@ -535,7 +535,7 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 {
     float gyro[3];
     float bias[3] = {};
-    int n = 3000;
+    int n = 100;
     int i;
     for (i = 0; i < n; i++)
     {
@@ -574,7 +574,7 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 int
 main(void)
 {
-    volatile uint32_t ui32Adjust = 500;
+    volatile float dcycle = 0.5;
 
     //
     // Setup the system clock to run at 40 Mhz from PLL with crystal reference
@@ -586,7 +586,7 @@ main(void)
     //
     // Initialize PWM.
     //
-    InitPWM(g_sPWMInst);
+    InitPWM(&g_sPWMInst);
 
     //
     // Initialize UART for radio receiver.
@@ -610,34 +610,33 @@ main(void)
 
     while(1)
     {
-//        // Updates ESCs via radio.
-//        if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
-//                buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
-//        {
-//            ui32Adjust -= 1;
-//            if (ui32Adjust < 500)
-//            {
-//                ui32Adjust = 500;
-//            }
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
-//        }
-//
-//        else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
-//                buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
-//        {
-//            ui32Adjust += 1;
-//            if (ui32Adjust > 990)
-//            {
-//                ui32Adjust = 990;
-//            }
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, ui32Adjust * ui32Load / 1000);
-//            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, ui32Adjust * ui32Load / 1000);
-//        }
+        // Updates ESCs via radio.
+        if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
+                buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
+        {
+            dcycle -= 0.0001;
+            if (dcycle < 0.5)
+            {
+                dcycle = 0.5;
+            }
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, dcycle * g_sPWMInst.ui32Load);
+        }
+        else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
+                buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
+        {
+            dcycle += 0.0001;
+            if (dcycle > 0.99)
+            {
+                dcycle = 0.99;
+            }
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, dcycle * g_sPWMInst.ui32Load);
+            ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, dcycle * g_sPWMInst.ui32Load);
+        }
 
         // Reads IMU data.
         //

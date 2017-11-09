@@ -53,18 +53,22 @@ InitPWM(tPWM * psPWM)
     PWMGenPeriodSet(PWM1_BASE, PWM_GEN_1, psPWM->ui32Load);
 
     // esc 1
+    psPWM->dutyCycles[0] = 0.5;
     ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_0_BIT, true);
 
     // esc 2
+    psPWM->dutyCycles[1] = 0.5;
     ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_1_BIT, true);
 
     // esc 3
+    psPWM->dutyCycles[2] = 0.5;
     ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_2_BIT, true);
 
     // esc 4
+    psPWM->dutyCycles[3] = 0.5;
     ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 0.5 * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_3_BIT, true);
 

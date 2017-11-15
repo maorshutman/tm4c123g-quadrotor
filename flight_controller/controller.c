@@ -61,7 +61,9 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     float totalThrust = m * g /
             (K * cosf(psDCM->fEuler[0]) * cosf(psDCM->fEuler[1]));
 
-    // PD errors
+    //
+    // PD error.
+    //
     float eAlpha = -KP * (psPD->fDesState[2] - psDCM->fEuler[2]) +
             -KD * (0.0 - psDCM->pfGyro[2]);
     float eBeta = -KP * (psPD->fDesState[1] - psDCM->fEuler[1]) +
@@ -69,16 +71,21 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     float eGamma = -KP * (psPD->fDesState[0] - psDCM->fEuler[0]) +
             -KD * (0.0 - psDCM->pfGyro[0]);
 
-
+    //
+    // Torques up to constants.
+    //
     float torqGamma = -I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
     float torqBeta = -I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
     float torqAlpha = -I_ZZ * eAlpha / b;
 
+    //
+    // Updates omega^2 for all motors.
+    //
     float omegaSq[4];
-    omegaSq[0] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
-    omegaSq[0] = (totalThrust - torqGamma - torqBeta + torqAlpha) / 4.0;
-    omegaSq[2] = (totalThrust + torqGamma - torqBeta - torqAlpha) / 4.0;
-    omegaSq[3] = (totalThrust - torqGamma + torqBeta - torqAlpha) / 4.0;
+    omegaSq[0] = (totalThrust + torqGamma - torqBeta - torqAlpha) / 4.0;
+    omegaSq[1] = (totalThrust - torqGamma - torqBeta + torqAlpha) / 4.0;
+    omegaSq[2] = (totalThrust - torqGamma + torqBeta - torqAlpha) / 4.0;
+    omegaSq[3] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
 
     // limit motor angular velocity
     if (omegaSq[0] > MAX_MOTOR_GAMMA)    omegaSq[0] = MAX_MOTOR_GAMMA;
@@ -91,3 +98,18 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     psPD->fOmegaSq[2] = omegaSq[2];
     psPD->fOmegaSq[3] = omegaSq[3];
 }
+
+//*****************************************************************************
+//
+// Update motor PWM duty cycles.
+//
+//*****************************************************************************
+void
+updatePWM(tPWM * psPWM)
+{
+//    SetMotorPulseWidth(0, , psPWM);
+//    SetMotorPulseWidth(1, , psPWM);
+//    SetMotorPulseWidth(2, , psPWM);
+//    SetMotorPulseWidth(3, , psPWM);
+}
+

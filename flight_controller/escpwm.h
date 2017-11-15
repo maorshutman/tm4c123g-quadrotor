@@ -49,5 +49,6 @@ tPWM;
 
 void InitPWM(tPWM * psPWM);
 void SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle, tPWM * psPWM);
+void CalibrateThrottle(g_sPWMInst);
 
 #endif

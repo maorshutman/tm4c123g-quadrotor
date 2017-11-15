@@ -2,14 +2,6 @@
 
 //*****************************************************************************
 //
-//!
-//!
-//! \param
-//! \param
-//!
-//! ???
-//!
-//! \return
 //
 //*****************************************************************************
 void
@@ -52,24 +44,26 @@ InitPWM(tPWM * psPWM)
     PWMGenConfigure(PWM1_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN);
     PWMGenPeriodSet(PWM1_BASE, PWM_GEN_1, psPWM->ui32Load);
 
+    float initialDutyCycle = 0.99;
+
     // esc 1
-    psPWM->dutyCycles[0] = 0.5;
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, 0.5 * psPWM->ui32Load);
+    psPWM->dutyCycles[0] = initialDutyCycle;
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_0, (1 - initialDutyCycle) * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_0_BIT, true);
 
     // esc 2
-    psPWM->dutyCycles[1] = 0.5;
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, 0.5 * psPWM->ui32Load);
+    psPWM->dutyCycles[1] = initialDutyCycle;
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_1, (1 - initialDutyCycle) * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_1_BIT, true);
 
     // esc 3
-    psPWM->dutyCycles[2] = 0.5;
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, 0.5 * psPWM->ui32Load);
+    psPWM->dutyCycles[2] = initialDutyCycle;
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_2, (1 - initialDutyCycle) * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_2_BIT, true);
 
     // esc 4
-    psPWM->dutyCycles[3] = 0.5;
-    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, 0.5 * psPWM->ui32Load);
+    psPWM->dutyCycles[3] = initialDutyCycle;
+    ROM_PWMPulseWidthSet(PWM1_BASE, PWM_OUT_3, (1 - initialDutyCycle) * psPWM->ui32Load);
     ROM_PWMOutputState(PWM1_BASE, PWM_OUT_3_BIT, true);
 
     // enable both generators
@@ -80,14 +74,6 @@ InitPWM(tPWM * psPWM)
 
 //*****************************************************************************
 //
-//!
-//!
-//! \param
-//! \param
-//!
-//! ???
-//!
-//! \return
 //
 //*****************************************************************************
 void
@@ -116,6 +102,21 @@ SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle, tPWM * psPWM)
                              dutyCycle * psPWM->ui32Load);
         break;
     }
+}
+
+//*****************************************************************************
+//
+//
+//*****************************************************************************
+void
+CalibrateThrottle(tPWM * psPWM)
+{
+    SysCtlDelay(3 * SysCtlClockGet() / 3);
+    float dcycle = 0.5;
+    SetMotorPulseWidth(0, 1.0 - dcycle, psPWM);
+    SetMotorPulseWidth(1, 1.0 - dcycle, psPWM);
+    SetMotorPulseWidth(2, 1.0 - dcycle, psPWM);
+    SetMotorPulseWidth(3, 1.0 - dcycle, psPWM);
 }
 
 

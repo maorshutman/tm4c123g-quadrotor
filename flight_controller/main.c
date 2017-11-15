@@ -1,24 +1,5 @@
 //*****************************************************************************
 //
-// compdcm_mpu9150.c - Example use of the SensorLib with the MPU9150
-//
-// Copyright (c) 2013-2016 Texas Instruments Incorporated.  All rights reserved.
-// Software License Agreement
-// 
-// Texas Instruments (TI) is supplying this software for use solely and
-// exclusively on TI's microcontroller products. The software is owned by
-// TI and/or its suppliers, and is protected under applicable copyright
-// laws. You may not combine this software with "viral" open-source
-// software in order to form a larger program.
-// 
-// THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
-// NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
-// NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
-// CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
-// DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
-// This is part of revision 2.1.3.156 of the EK-TM4C123GXL Firmware Package.
 //
 //*****************************************************************************
 
@@ -26,7 +7,6 @@
 #include <stdbool.h>
 #include <math.h>
 #include "inc/hw_memmap.h"
-//#include "inc/hw_ints.h"
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
 #include "driverlib/interrupt.h"
@@ -43,33 +23,9 @@
 #include "comp_dcm.h"
 #include "drivers/rgb.h"
 #include "inc/tm4c123gh6pm.h"
-
 #include "hc12.h"
 #include "buffer.h"
 #include "escpwm.h"
-
-
-//*****************************************************************************
-//
-//! \addtogroup example_list
-//! <h1>Nine Axis Sensor Fusion with the MPU9150 and Complimentary-Filtered
-//! DCM (compdcm_mpu9150)</h1>
-//!
-//! This example demonstrates the basic use of the Sensor Library, TM4C123G
-//! LaunchPad and SensHub BoosterPack to obtain nine axis motion measurements
-//! from the MPU9150.  The example fuses the nine axis measurements into a set
-//! of Euler angles: roll, pitch and yaw.  It also produces the rotation
-//! quaternions.  The fusion mechanism demonstrated is complimentary-filtered
-//! direct cosine matrix (DCM) algorithm is provided as part of the Sensor
-//! Library.
-//!
-//! Connect a serial terminal program to the LaunchPad's ICDI virtual serial
-//! port at 115,200 baud.  Use eight bits per byte, no parity and one stop bit.
-//! The raw sensor measurements, Euler angles and quaternions are printed to
-//! the terminal.  The RGB LED begins to blink at 1Hz after initialization is
-//! completed and the example application is running.
-//
-//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -152,6 +108,13 @@ int_fast32_t i32IPart[16], i32FPart[16];
 uint_fast32_t ui32Idx, ui32CompDCMStarted;
 float pfData[16];
 float *pfAccel, *pfGyro, *pfMag, *pfEulers, *pfQuaternion;
+
+//*****************************************************************************
+//
+// Global variable for the number of samples taken for gyro bias estimation.
+//
+//*****************************************************************************
+#define GYRO_BIAS_SAMPLES           100
 
 //*****************************************************************************
 //
@@ -535,9 +498,8 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 {
     float gyro[3];
     float bias[3] = {};
-    int n = 100;
     int i;
-    for (i = 0; i < n; i++)
+    for (i = 0; i < GYRO_BIAS_SAMPLES; i++)
     {
         while(!g_vui8I2CDoneFlag)
         {
@@ -560,9 +522,9 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
         bias[2] += gyro[2];
     }
 
-    *biasWx = bias[0] / n;
-    *biasWy = bias[1] / n;
-    *biasWz = bias[2] / n;
+    *biasWx = bias[0] / GYRO_BIAS_SAMPLES;
+    *biasWy = bias[1] / GYRO_BIAS_SAMPLES;
+    *biasWz = bias[2] / GYRO_BIAS_SAMPLES;
 }
 
 //*****************************************************************************
@@ -574,8 +536,6 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 int
 main(void)
 {
-    volatile float dcycle = 0.5;
-
     //
     // Setup the system clock to run at 40 Mhz from PLL with crystal reference
     //
@@ -587,6 +547,11 @@ main(void)
     // Initialize PWM.
     //
     InitPWM(&g_sPWMInst);
+
+    //
+    // Calibrates throttle.
+    //
+    CalibrateThrottle(&g_sPWMInst);
 
     //
     // Initialize UART for radio receiver.
@@ -608,34 +573,37 @@ main(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
 
+    volatile float dcycle = g_sPWMInst.dutyCycles[0];
+
     while(1)
     {
+        // TODO
+        //IntMasterEnable() and IntMasterDisable();
+
         // Updates ESCs via radio.
-        if(buff[3] == 1 && buff[4] == 2 && buff[5] == 3 &&
-                buff[6] == 4 && buff[7] == 5 && buff[8] == 6)
+        if(buff[1] < 10)
         {
             dcycle -= 0.001;
             if (dcycle < 0.5)
             {
                 dcycle = 0.5;
             }
-            SetMotorPulseWidth(0, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(1, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(2, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(3, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(0, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(1, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(2, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(3, 1.0 - dcycle, &g_sPWMInst);
         }
-        else if(buff[3] == 10 && buff[4] == 20 && buff[5] == 30 &&
-                buff[6] == 40 && buff[7] == 50 && buff[8] == 60)
+        else if(buff[1] > 240)
         {
             dcycle += 0.001;
             if (dcycle > 0.99)
             {
                 dcycle = 0.99;
             }
-            SetMotorPulseWidth(0, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(1, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(2, dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(3, dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(0, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(1, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(2, 1.0 - dcycle, &g_sPWMInst);
+            SetMotorPulseWidth(3, 1.0 - dcycle, &g_sPWMInst);
         }
 
         // Reads IMU data.
@@ -701,10 +669,10 @@ main(void)
             CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
                               pfGyro[2]);
             // DEBUGGING
-            GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
+            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
             CompDCMUpdate(&g_sCompDCMInst);
             // DEBUGGING
-            GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
+            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
         }
 
         //

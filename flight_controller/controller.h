@@ -21,6 +21,7 @@ extern "C"
 #endif
 
 #include "comp_dcm.h"
+#include "escpwm.h"
 
 //*****************************************************************************
 //
@@ -52,6 +53,7 @@ tPDController;
 //
 //*****************************************************************************
 extern void errorToInput(tPDController * psPD, tCompDCM * psDCM);
+extern void updatePWM(tPWM * psPWM);
 
 //*****************************************************************************
 //

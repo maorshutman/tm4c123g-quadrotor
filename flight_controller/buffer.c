@@ -1,26 +1,33 @@
 #include <stdint.h>
 #include "buffer.h"
 
-char buff[DATA_LENGTH];
-uint8_t index = 0;
-
+char prevPacketBuffer[PACKET_LENGTH];
+char buff[PACKET_LENGTH];
+uint8_t writeCharIndex = 0;
+uint32_t prevPacketIndex = 0;
+uint32_t currPacketIndex = 0;
 
 //*****************************************************************************
 //
-//!
-//!
-//! \param
-//! \param
-//!
-//! ???
-//!
-//! \return
 //
 //*****************************************************************************
 void WriteByteToBuffer(char ch)
 {
-    buff[index] = ch;
-    index++;
-    if (index == DATA_LENGTH)
-        index = 0;
+    buff[writeCharIndex] = ch;
+    writeCharIndex++;
+    if (writeCharIndex == PACKET_LENGTH)
+    {
+        writeCharIndex = 0;
+    }
+}
+
+
+//*****************************************************************************
+//
+//
+//*****************************************************************************
+char
+getCharFromBuffer(uint8_t i)
+{
+    return prevPacketBuffer[i];
 }

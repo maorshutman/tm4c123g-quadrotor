@@ -39,7 +39,7 @@
 #define I_XX                0.00884 // kg * m^2
 #define I_YY                0.00884 // kg * m^2
 #define I_ZZ                0.0165 // kg * m^2
-#define MAX_MOTOR_GAMMA     pow(2.0 * M_PI * 6360 / 60, 2) // max motor rpm
+#define MAX_MOTOR_OMEGA_SQ     pow(2.0 * M_PI * 6360 / 60, 2) // max motor rpm
 #define K                   (0.62 * 9.81) / pow(2 * M_PI * 6360 / 60, 2) // N * Hz^-2
 
 //*****************************************************************************
@@ -50,9 +50,10 @@
 #define KD                  3.0
 #define KP                  4.0
 
+
 //*****************************************************************************
 //
-// ???
+// Calculates the motor angular velocities from the PD errors.
 //
 //*****************************************************************************
 void
@@ -88,10 +89,10 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     omegaSq[3] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
 
     // limit motor angular velocity
-    if (omegaSq[0] > MAX_MOTOR_GAMMA)    omegaSq[0] = MAX_MOTOR_GAMMA;
-    if (omegaSq[1] > MAX_MOTOR_GAMMA)    omegaSq[1] = MAX_MOTOR_GAMMA;
-    if (omegaSq[2] > MAX_MOTOR_GAMMA)    omegaSq[2] = MAX_MOTOR_GAMMA;
-    if (omegaSq[3] > MAX_MOTOR_GAMMA)    omegaSq[3] = MAX_MOTOR_GAMMA;
+    if (omegaSq[0] > MAX_MOTOR_OMEGA_SQ)    omegaSq[0] = MAX_MOTOR_OMEGA_SQ;
+    if (omegaSq[1] > MAX_MOTOR_OMEGA_SQ)    omegaSq[1] = MAX_MOTOR_OMEGA_SQ;
+    if (omegaSq[2] > MAX_MOTOR_OMEGA_SQ)    omegaSq[2] = MAX_MOTOR_OMEGA_SQ;
+    if (omegaSq[3] > MAX_MOTOR_OMEGA_SQ)    omegaSq[3] = MAX_MOTOR_OMEGA_SQ;
 
     psPD->fOmegaSq[0] = omegaSq[0];
     psPD->fOmegaSq[1] = omegaSq[1];
@@ -99,17 +100,42 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     psPD->fOmegaSq[3] = omegaSq[3];
 }
 
+
 //*****************************************************************************
 //
 // Update motor PWM duty cycles.
 //
 //*****************************************************************************
 void
-updatePWM(tPWM * psPWM)
+updatePWM(tPDController * psPD, tPWM * psPWM)
 {
-//    SetMotorPulseWidth(0, , psPWM);
-//    SetMotorPulseWidth(1, , psPWM);
-//    SetMotorPulseWidth(2, , psPWM);
-//    SetMotorPulseWidth(3, , psPWM);
+    float dutyCycle0 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[0]);
+    float dutyCycle1 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[1]);
+    float dutyCycle2 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[2]);
+    float dutyCycle3 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[3]);
+
+    //
+    // Updates ESC signals.
+    //
+    SetMotorPulseWidth(0, 1 - dutyCycle0, psPWM);
+    SetMotorPulseWidth(1, 1 - dutyCycle1, psPWM);
+    SetMotorPulseWidth(2, 1 - dutyCycle2, psPWM);
+    SetMotorPulseWidth(3, 1 - dutyCycle3, psPWM);
 }
+
+//*****************************************************************************
+//
+// Calculates a PWM duty cycle from a required RPM and battery voltage.
+//
+//*****************************************************************************
+float
+calcDutyCycle(float battV, float reqRPM)
+{
+    return 1.0;
+}
+
+
+
+
+
 

@@ -490,7 +490,7 @@ ConfigureMPU6050()
 
 //*****************************************************************************
 //
-// Measures gyro bias.
+// Measures gyroscope bias.
 //
 //*****************************************************************************
 void
@@ -583,7 +583,7 @@ main(void)
         // Updates ESCs via radio.
         if(buff[1] < 10)
         {
-            dcycle -= 0.001;
+            dcycle -= 0.0005;
             if (dcycle < 0.5)
             {
                 dcycle = 0.5;
@@ -595,7 +595,7 @@ main(void)
         }
         else if(buff[1] > 240)
         {
-            dcycle += 0.001;
+            dcycle += 0.0005;
             if (dcycle > 0.99)
             {
                 dcycle = 0.99;

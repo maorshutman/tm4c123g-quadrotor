@@ -3,7 +3,6 @@
 //
 // controller.h
 //
-//
 //*****************************************************************************
 
 #ifndef _CONTROLLER_H_
@@ -31,21 +30,27 @@ extern "C"
 typedef struct
 {
     //
-    //
+    // The required duty cycle fed into the ESCs.
     //
     float fDutyCycle[4];
 
     //
-    //
+    // The required omega^2 of all motors.
     //
     float fOmegaSq[4];
 
     //
-    // desired
+    // Desired angular state.
     //
     float fDesState[3];
+
+    //
+    // Current battery voltage.
+    //
+    float fBatteryV;
 }
 tPDController;
+
 
 //*****************************************************************************
 //
@@ -53,7 +58,9 @@ tPDController;
 //
 //*****************************************************************************
 extern void errorToInput(tPDController * psPD, tCompDCM * psDCM);
-extern void updatePWM(tPWM * psPWM);
+extern void updatePWM(tPDController * psPD, tPWM * psPWM);
+extern float calcDutyCycle(float battV, float reqRPM);
+
 
 //*****************************************************************************
 //

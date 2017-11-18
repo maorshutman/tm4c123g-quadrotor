@@ -115,7 +115,7 @@ SetMotorPulseWidth(uint8_t motorNumber, float dutyCycle, tPWM * psPWM)
 void
 CalibrateThrottle(tPWM * psPWM)
 {
-    SysCtlDelay(3 * SysCtlClockGet() / 3);
+    SysCtlDelay(3 * SysCtlClockGet() / 3);  // 3 sec delay
     float dcycle = 0.5;
     SetMotorPulseWidth(0, 1.0 - dcycle, psPWM);
     SetMotorPulseWidth(1, 1.0 - dcycle, psPWM);

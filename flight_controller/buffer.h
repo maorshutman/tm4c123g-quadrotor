@@ -10,6 +10,6 @@ extern uint32_t prevPacketIndex;
 extern uint32_t currPacketIndex;
 
 void WriteByteToBuffer(char ch);
-char getCharFromBuffer(uint8_t i);
+char GetCharFromBuffer(uint8_t i);
 
 #endif

@@ -7,6 +7,7 @@ CMD_SRCS += \
 ../compdcm_mpu9150_ccs.cmd 
 
 C_SRCS += \
+../battery_adc.c \
 ../buffer.c \
 ../comp_dcm.c \
 ../controller.c \
@@ -17,6 +18,7 @@ C_SRCS += \
 ../startup_ccs.c 
 
 C_DEPS += \
+./battery_adc.d \
 ./buffer.d \
 ./comp_dcm.d \
 ./controller.d \
@@ -27,6 +29,7 @@ C_DEPS += \
 ./startup_ccs.d 
 
 OBJS += \
+./battery_adc.obj \
 ./buffer.obj \
 ./comp_dcm.obj \
 ./controller.obj \
@@ -37,6 +40,7 @@ OBJS += \
 ./startup_ccs.obj 
 
 OBJS__QUOTED += \
+"battery_adc.obj" \
 "buffer.obj" \
 "comp_dcm.obj" \
 "controller.obj" \
@@ -47,6 +51,7 @@ OBJS__QUOTED += \
 "startup_ccs.obj" 
 
 C_DEPS__QUOTED += \
+"battery_adc.d" \
 "buffer.d" \
 "comp_dcm.d" \
 "controller.d" \
@@ -57,6 +62,7 @@ C_DEPS__QUOTED += \
 "startup_ccs.d" 
 
 C_SRCS__QUOTED += \
+"../battery_adc.c" \
 "../buffer.c" \
 "../comp_dcm.c" \
 "../controller.c" \

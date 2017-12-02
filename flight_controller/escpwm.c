@@ -121,6 +121,7 @@ CalibrateThrottle(tPWM * psPWM)
     SetMotorPulseWidth(1, 1.0 - dcycle, psPWM);
     SetMotorPulseWidth(2, 1.0 - dcycle, psPWM);
     SetMotorPulseWidth(3, 1.0 - dcycle, psPWM);
+    SysCtlDelay(3 * SysCtlClockGet() / 3);  // 3 sec delay
 }
 
 

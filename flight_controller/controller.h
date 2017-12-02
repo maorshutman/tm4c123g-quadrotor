@@ -30,12 +30,12 @@ extern "C"
 typedef struct
 {
     //
-    // The required duty cycle fed into the ESCs.
+    // The desired total thrust in the z direction in terms of omega^2.
     //
-    float fDutyCycle[4];
+    float fThrustZDir;
 
     //
-    // The required omega^2 of all motors.
+    // The required omega^2 for all motors.
     //
     float fOmegaSq[4];
 
@@ -57,10 +57,12 @@ tPDController;
 // Prototypes.
 //
 //*****************************************************************************
-extern void errorToInput(tPDController * psPD, tCompDCM * psDCM);
-extern void updatePWM(tPDController * psPD, tPWM * psPWM);
-extern float calcDutyCycle(float battV, float reqRPM);
-
+extern void InitPDController(tPDController * psPD);
+extern void ErrorToInput(tPDController * psPD, tCompDCM * psDCM);
+extern void PDContUpdatePWM(tPDController * psPD, tPWM * psPWM);
+extern float CalcDutyCycle(float battV, float reqOmegaSq);
+//extern void ReadDesiredState(tPDController * psPD);
+extern void ReadDesiredState(tPDController * psPD, tPWM * psPWM);
 
 //*****************************************************************************
 //

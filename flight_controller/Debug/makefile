@@ -8,6 +8,7 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./battery_adc.obj" \
 "./buffer.obj" \
 "./comp_dcm.obj" \
 "./controller.obj" \
@@ -167,8 +168,8 @@ flight_controller.bin: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "buffer.obj" "comp_dcm.obj" "controller.obj" "escpwm.obj" "hc12.obj" "main.obj" "mpu9150mod.obj" "startup_ccs.obj" "drivers/rgb.obj" "utils/uartstdio.obj" 
-	-$(RM) "buffer.d" "comp_dcm.d" "controller.d" "escpwm.d" "hc12.d" "main.d" "mpu9150mod.d" "startup_ccs.d" "drivers/rgb.d" "utils/uartstdio.d" 
+	-$(RM) "battery_adc.obj" "buffer.obj" "comp_dcm.obj" "controller.obj" "escpwm.obj" "hc12.obj" "main.obj" "mpu9150mod.obj" "startup_ccs.obj" "drivers/rgb.obj" "utils/uartstdio.obj" 
+	-$(RM) "battery_adc.d" "buffer.d" "comp_dcm.d" "controller.d" "escpwm.d" "hc12.d" "main.d" "mpu9150mod.d" "startup_ccs.d" "drivers/rgb.d" "utils/uartstdio.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

@@ -26,6 +26,12 @@
 #include "hc12.h"
 #include "buffer.h"
 #include "escpwm.h"
+#include "controller.h"
+#include "battery_adc.h"
+
+
+// DEBGGING
+float v;
 
 //*****************************************************************************
 //
@@ -68,6 +74,13 @@ tCompDCM g_sCompDCMInst;
 //
 //*****************************************************************************
 tPWM g_sPWMInst;
+
+//*****************************************************************************
+//
+// Global Instance structure for the PD controller.
+//
+//*****************************************************************************
+tPDController g_sPDControllerInst;
 
 //*****************************************************************************
 //
@@ -276,6 +289,51 @@ MPU9150AppI2CWait(char *pcFilename, uint_fast32_t ui32Line)
     // clear the data flag for next use.
     //
     g_vui8I2CDoneFlag = 0;
+}
+
+//*****************************************************************************
+//
+// This function sets up UART0 to be used for a console to display information
+// as the example is running.
+//
+//*****************************************************************************
+void
+InitConsole(void)
+{
+    //
+    // Enable GPIO port A which is used for UART0 pins.
+    // TODO: change this to whichever GPIO port you are using.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    //
+    // Configure the pin muxing for UART0 functions on port A0 and A1.
+    // This step is not necessary if your part does not support pin muxing.
+    // TODO: change this to select the port/pin you are using.
+    //
+    GPIOPinConfigure(GPIO_PA0_U0RX);
+    GPIOPinConfigure(GPIO_PA1_U0TX);
+
+    //
+    // Enable UART0 so that we can configure the clock.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+
+    //
+    // Use the internal 16MHz oscillator as the UART clock source.
+    //
+    UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
+
+    //
+    // Select the alternate (UART) function for these pins.
+    // TODO: change this to select the port/pin you are using.
+    //
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    //
+    // Initialize the UART for console I/O.
+    //
+    UARTStdioConfig(0, 115200, 16000000);
 }
 
 //*****************************************************************************
@@ -532,7 +590,6 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
 // Main application entry point.
 //
 //*****************************************************************************
-
 int
 main(void)
 {
@@ -564,49 +621,29 @@ main(void)
     ConfigureMPU6050();
 
     //
-    // Measures gyro bias.
+    // Measures gyroscope bias.
     //
     CalibrateGyro(g_sCompDCMInst.fBias, g_sCompDCMInst.fBias + 1,
                   g_sCompDCMInst.fBias + 2);
+
+    //
+    // Initialize PD controller for hovering.
+    //
+    InitPDController(&g_sPDControllerInst);
 
     // DEBUGGING
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
 
-    volatile float dcycle = g_sPWMInst.dutyCycles[0];
-
+    //
+    // Main loop.
+    //
     while(1)
     {
-        // TODO
-        //IntMasterEnable() and IntMasterDisable();
-
-        // Updates ESCs via radio.
-        if(buff[1] < 10)
-        {
-            dcycle -= 0.0005;
-            if (dcycle < 0.5)
-            {
-                dcycle = 0.5;
-            }
-            SetMotorPulseWidth(0, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(1, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(2, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(3, 1.0 - dcycle, &g_sPWMInst);
-        }
-        else if(buff[1] > 240)
-        {
-            dcycle += 0.0005;
-            if (dcycle > 0.99)
-            {
-                dcycle = 0.99;
-            }
-            SetMotorPulseWidth(0, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(1, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(2, 1.0 - dcycle, &g_sPWMInst);
-            SetMotorPulseWidth(3, 1.0 - dcycle, &g_sPWMInst);
-        }
-
+        //
         // Reads IMU data.
+        //
+
         //
         // Go to sleep mode while waiting for data ready.
         //
@@ -616,7 +653,7 @@ main(void)
         }
 
         //
-        // Clear the flag
+        // Clears the flag.
         //
         g_vui8I2CDoneFlag = 0;
 
@@ -641,7 +678,6 @@ main(void)
         //
         // Check if this is our first data ever.
         //
-
         if(ui32CompDCMStarted == 0)
         {
             //
@@ -740,7 +776,7 @@ main(void)
                 // part.
                 //
                 i32FPart[ui32Idx] = i32FPart[ui32Idx] -
-                                    (i32IPart[ui32Idx] * 1000);
+                        (i32IPart[ui32Idx] * 1000);
 
                 //
                 // make the decimal part a positive number for display.
@@ -786,7 +822,18 @@ main(void)
             UARTprintf("\033[19;32H%3d.%03d", i32IPart[13], i32FPart[13]);
             UARTprintf("\033[19;50H%3d.%03d", i32IPart[14], i32FPart[14]);
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
-       }
+        }
+
+        //
+        // Reads desired state via UART2 buffer.
+        //
+        ReadDesiredState(&g_sPDControllerInst, &g_sPWMInst);
+
+        //
+        // PD controller.
+        //
+        ErrorToInput(&g_sPDControllerInst, &g_sCompDCMInst);
+        PDContUpdatePWM(&g_sPDControllerInst, &g_sPWMInst);
     }
 
     return 0;

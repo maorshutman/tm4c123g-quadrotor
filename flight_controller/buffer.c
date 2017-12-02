@@ -29,7 +29,7 @@ void WriteByteToBuffer(char ch)
 //
 //*****************************************************************************
 char
-getCharFromBuffer(uint8_t i)
+GetCharFromBuffer(uint8_t i)
 {
     return prevPacketBuffer[i];
 }

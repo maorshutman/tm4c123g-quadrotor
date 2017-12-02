@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include "driverlib/debug.h"
 #include "controller.h"
+#include "buffer.h"
 
 //*****************************************************************************
 //
@@ -53,13 +54,38 @@
 
 //*****************************************************************************
 //
+// Initialize controller.
+//
+//*****************************************************************************
+void
+InitPDController(tPDController * psPD)
+{
+    //
+    // Initial thrust.
+    //
+    psPD->fThrustZDir = 0.7; // in kg
+
+    //
+    // Desired angular state.
+    //
+    psPD->fDesState[0] = 0.0;
+    psPD->fDesState[1] = 0.0;
+    psPD->fDesState[2] = 0.0;
+}
+
+
+//*****************************************************************************
+//
 // Calculates the motor angular velocities from the PD errors.
 //
 //*****************************************************************************
 void
-errorToInput(tPDController * psPD, tCompDCM * psDCM)
+ErrorToInput(tPDController * psPD, tCompDCM * psDCM)
 {
-    float totalThrust = m * g /
+    //
+    // Total thrust in the z direction in the world frame.
+    //
+    float totalThrust = psPD->fThrustZDir * g /
             (K * cosf(psDCM->fEuler[0]) * cosf(psDCM->fEuler[1]));
 
     //
@@ -75,9 +101,9 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     //
     // Torques up to constants.
     //
-    float torqGamma = -I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
-    float torqBeta = -I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
-    float torqAlpha = -I_ZZ * eAlpha / b;
+    float torqGamma = 0;//-I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
+    float torqBeta = 0;//-I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
+    float torqAlpha = 0;// -I_ZZ * eAlpha / b;
 
     //
     // Updates omega^2 for all motors.
@@ -89,10 +115,22 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
     omegaSq[3] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
 
     // limit motor angular velocity
-    if (omegaSq[0] > MAX_MOTOR_OMEGA_SQ)    omegaSq[0] = MAX_MOTOR_OMEGA_SQ;
-    if (omegaSq[1] > MAX_MOTOR_OMEGA_SQ)    omegaSq[1] = MAX_MOTOR_OMEGA_SQ;
-    if (omegaSq[2] > MAX_MOTOR_OMEGA_SQ)    omegaSq[2] = MAX_MOTOR_OMEGA_SQ;
-    if (omegaSq[3] > MAX_MOTOR_OMEGA_SQ)    omegaSq[3] = MAX_MOTOR_OMEGA_SQ;
+    if (omegaSq[0] > MAX_MOTOR_OMEGA_SQ)
+    {
+        omegaSq[0] = MAX_MOTOR_OMEGA_SQ;
+    }
+    if (omegaSq[1] > MAX_MOTOR_OMEGA_SQ)
+    {
+        omegaSq[1] = MAX_MOTOR_OMEGA_SQ;
+    }
+    if (omegaSq[2] > MAX_MOTOR_OMEGA_SQ)
+    {
+        omegaSq[2] = MAX_MOTOR_OMEGA_SQ;
+    }
+    if (omegaSq[3] > MAX_MOTOR_OMEGA_SQ)
+    {
+        omegaSq[3] = MAX_MOTOR_OMEGA_SQ;
+    }
 
     psPD->fOmegaSq[0] = omegaSq[0];
     psPD->fOmegaSq[1] = omegaSq[1];
@@ -107,7 +145,7 @@ errorToInput(tPDController * psPD, tCompDCM * psDCM)
 //
 //*****************************************************************************
 void
-updatePWM(tPDController * psPD, tPWM * psPWM)
+PDContUpdatePWM(tPDController * psPD, tPWM * psPWM)
 {
     float dutyCycle0 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[0]);
     float dutyCycle1 = CalcDutyCycle(psPD->fBatteryV, psPD->fOmegaSq[1]);
@@ -123,15 +161,64 @@ updatePWM(tPDController * psPD, tPWM * psPWM)
     SetMotorPulseWidth(3, 1 - dutyCycle3, psPWM);
 }
 
+
 //*****************************************************************************
 //
 // Calculates a PWM duty cycle from a required RPM and battery voltage.
 //
 //*****************************************************************************
 float
-calcDutyCycle(float battV, float reqRPM)
+CalcDutyCycle(float battV, float reqOmegaSq)
 {
-    return 1.0;
+    // TODO
+    // add dependency on battery voltage
+    // for 11.1 V
+    float rpm = 60.0 * sqrtf(reqOmegaSq) / (2.0 * M_PI);
+    float dutyCycle = 1.08307724e-08 * rpm * rpm -2.86419236e-06 * rpm + 55.99494359e-02;
+    return dutyCycle;
+}
+
+
+//*****************************************************************************
+//
+// Reads desired state of quadrotor via radio.
+//
+//*****************************************************************************
+void
+ReadDesiredState(tPDController * psPD, tPWM * psPWM)
+{
+    //
+    // Copies UART2 buffer. Simple critical section.
+    //
+//    IntMasterDisable();
+//    char bafferCopy[PACKET_LENGTH];
+//    int i;
+//    for (i = 0; i < PACKET_LENGTH; i++) {
+//        bafferCopy[i] = buff[i];
+//    }
+//    IntMasterEnable();
+
+    //
+    // Reads desired state from copied buffer into the PD controller's
+    // struct.
+    //
+    float delta = 0.01;
+    if(buff[1] < 10)
+    {
+        psPD->fThrustZDir -= delta;
+        if (psPD->fThrustZDir < 0.2)
+        {
+            psPD->fThrustZDir = 0.2;
+        }
+    }
+    else if(buff[1] > 240)
+    {
+        psPD->fThrustZDir += delta;
+        if (psPD->fThrustZDir > 0.9)
+        {
+            psPD->fThrustZDir = 0.9;
+        }
+    }
 }
 
 

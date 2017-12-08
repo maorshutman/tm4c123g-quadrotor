@@ -30,17 +30,16 @@
 //
 //*****************************************************************************
 
-#define m                   0.7 // kg
 #define g                   9.81 // m * s^-2
-#define b                   5.0e-6  // N * Hz^-2, taken form Mellinger paper
-#define BODY_MASS           0.66 // kg
+#define m                   0.66 // kg
+#define b                   5.0e-6 * 1.2  // N * Hz^-2, taken form Mellinger paper
 #define MOTOR_MASS          0.047 // kg
 #define ARM_LENGTH          0.25 // m
 #define ARM_MASS            0.043 // kg
 #define I_XX                0.00884 // kg * m^2
-#define I_YY                0.00884 // kg * m^2
+#define I_YY                0.00884 * 1.05 // kg * m^2
 #define I_ZZ                0.0165 // kg * m^2
-#define MAX_MOTOR_OMEGA_SQ     pow(2.0 * M_PI * 6360 / 60, 2) // max motor rpm
+#define MAX_MOTOR_OMEGA_SQ  pow(2.0 * M_PI * 6360 / 60.0, 2) * 0.7 // max motor omega^2
 #define K                   (0.62 * 9.81) / pow(2 * M_PI * 6360 / 60, 2) // N * Hz^-2
 
 //*****************************************************************************
@@ -63,7 +62,7 @@ InitPDController(tPDController * psPD)
     //
     // Initial thrust.
     //
-    psPD->fThrustZDir = 0.7; // in kg
+    psPD->fThrustZDir = 0.01; // in kg
 
     //
     // Desired angular state.
@@ -89,21 +88,21 @@ ErrorToInput(tPDController * psPD, tCompDCM * psDCM)
             (K * cosf(psDCM->fEuler[0]) * cosf(psDCM->fEuler[1]));
 
     //
-    // PD error.
+    // PD error. The desired angular velocity is set to 0.
     //
-    float eAlpha = -KP * (psPD->fDesState[2] - psDCM->fEuler[2]) +
-            -KD * (0.0 - psDCM->pfGyro[2]);
-    float eBeta = -KP * (psPD->fDesState[1] - psDCM->fEuler[1]) +
-            -KD * (0.0 - psDCM->pfGyro[1]);
-    float eGamma = -KP * (psPD->fDesState[0] - psDCM->fEuler[0]) +
-            -KD * (0.0 - psDCM->pfGyro[0]);
+    float eAlpha = KP * (psPD->fDesState[2] - psDCM->fEuler[2]) +
+            KD * (0.0 - psDCM->pfGyro[2]);
+    float eBeta = KP * (psPD->fDesState[1] - psDCM->fEuler[1]) +
+            KD * (0.0 - psDCM->pfGyro[1]);
+    float eGamma = KP * (psPD->fDesState[0] - psDCM->fEuler[0]) +
+            KD * (0.0 - psDCM->pfGyro[0]);
 
     //
     // Torques up to constants.
     //
-    float torqGamma = 0;//-I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
-    float torqBeta = 0;//-I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
-    float torqAlpha = 0;// -I_ZZ * eAlpha / b;
+    float torqGamma = I_XX * eGamma * 1.41421356237 / (ARM_LENGTH * K);
+    float torqBeta = I_YY * eBeta * 1.41421356237 / (ARM_LENGTH * K);
+    float torqAlpha = I_ZZ * eAlpha / b;
 
     //
     // Updates omega^2 for all motors.
@@ -114,23 +113,17 @@ ErrorToInput(tPDController * psPD, tCompDCM * psDCM)
     omegaSq[2] = (totalThrust - torqGamma + torqBeta - torqAlpha) / 4.0;
     omegaSq[3] = (totalThrust + torqGamma + torqBeta + torqAlpha) / 4.0;
 
-    // limit motor angular velocity
+    //
+    // Limit motor angular velocity.
+    //
     if (omegaSq[0] > MAX_MOTOR_OMEGA_SQ)
-    {
         omegaSq[0] = MAX_MOTOR_OMEGA_SQ;
-    }
     if (omegaSq[1] > MAX_MOTOR_OMEGA_SQ)
-    {
         omegaSq[1] = MAX_MOTOR_OMEGA_SQ;
-    }
     if (omegaSq[2] > MAX_MOTOR_OMEGA_SQ)
-    {
         omegaSq[2] = MAX_MOTOR_OMEGA_SQ;
-    }
     if (omegaSq[3] > MAX_MOTOR_OMEGA_SQ)
-    {
         omegaSq[3] = MAX_MOTOR_OMEGA_SQ;
-    }
 
     psPD->fOmegaSq[0] = omegaSq[0];
     psPD->fOmegaSq[1] = omegaSq[1];
@@ -188,41 +181,101 @@ void
 ReadDesiredState(tPDController * psPD, tPWM * psPWM)
 {
     //
-    // Copies UART2 buffer. Simple critical section.
+    // Copies UART2 buffer inside a simple critical section.
     //
-//    IntMasterDisable();
-//    char bafferCopy[PACKET_LENGTH];
-//    int i;
-//    for (i = 0; i < PACKET_LENGTH; i++) {
-//        bafferCopy[i] = buff[i];
-//    }
-//    IntMasterEnable();
+    IntMasterDisable();
+    char bufferCopy[PACKET_LENGTH];
+    int i;
+    for (i = 0; i < PACKET_LENGTH; i++) {
+        bufferCopy[i] = buff[i];
+    }
+    IntMasterEnable();
 
     //
     // Reads desired state from copied buffer into the PD controller's
     // struct.
     //
-    float delta = 0.01;
-    if(buff[1] < 10)
+
+    //
+    // Thrust
+    //
+    float delta = 0.001;
+    if(bufferCopy[1] < 10)
     {
         psPD->fThrustZDir -= delta;
-        if (psPD->fThrustZDir < 0.2)
+        if (psPD->fThrustZDir < 0.01)
         {
-            psPD->fThrustZDir = 0.2;
+            psPD->fThrustZDir = 0.01;
         }
     }
-    else if(buff[1] > 240)
+    else if(bufferCopy[1] > 240)
     {
         psPD->fThrustZDir += delta;
-        if (psPD->fThrustZDir > 0.9)
+        if (psPD->fThrustZDir > 1.0)
         {
-            psPD->fThrustZDir = 0.9;
+            psPD->fThrustZDir = 1.0;
+        }
+    }
+
+    delta = 0.001;
+    //
+    // Yaw (alpha)
+    //
+    if(bufferCopy[2] < 10)
+    {
+        psPD->fDesState[2] -= delta;
+        if (psPD->fDesState[2] < -0.1)
+        {
+            psPD->fDesState[2] = -0.1;
+        }
+    }
+    else if(bufferCopy[2] > 240)
+    {
+        psPD->fDesState[2] += delta;
+        if (psPD->fDesState[2] > 0.1)
+        {
+            psPD->fDesState[2] = 0.1;
+        }
+    }
+
+    //
+    // Pitch (beta)
+    //
+    if(bufferCopy[3] < 10)
+    {
+        psPD->fDesState[1] -= delta;
+        if (psPD->fDesState[1] < -0.1)
+        {
+            psPD->fDesState[1] = -0.1;
+        }
+    }
+    else if(bufferCopy[3] > 240)
+    {
+        psPD->fDesState[1] += delta;
+        if (psPD->fDesState[1] > 0.1)
+        {
+            psPD->fDesState[1] = 0.1;
+        }
+    }
+
+    //
+    // Roll (gamma)
+    //
+    if(bufferCopy[4] < 10)
+    {
+        psPD->fDesState[0] -= delta;
+        if (psPD->fDesState[0] < -0.1)
+        {
+            psPD->fDesState[0] = -0.1;
+        }
+    }
+    else if(bufferCopy[4] > 240)
+    {
+        psPD->fDesState[0] += delta;
+        if (psPD->fDesState[0] > 0.1)
+        {
+            psPD->fDesState[0] = 0.1;
         }
     }
 }
-
-
-
-
-
 

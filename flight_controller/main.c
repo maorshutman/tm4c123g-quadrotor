@@ -127,7 +127,7 @@ float *pfAccel, *pfGyro, *pfMag, *pfEulers, *pfQuaternion;
 // Global variable for the number of samples taken for gyro bias estimation.
 //
 //*****************************************************************************
-#define GYRO_BIAS_SAMPLES           100
+#define GYRO_BIAS_SAMPLES           2000
 
 //*****************************************************************************
 //
@@ -552,10 +552,13 @@ ConfigureMPU6050()
 //
 //*****************************************************************************
 void
-CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
+CalibrateIMU(float * biasWx, float * biasWy, float * biasWz,
+             float * biasAx, float * biasAy, float * biasAz)
 {
     float gyro[3];
-    float bias[3] = {};
+    float accel[3];
+    float gyroBias[3] = {};
+    float accelBias[3] = {};
     int i;
     for (i = 0; i < GYRO_BIAS_SAMPLES; i++)
     {
@@ -575,14 +578,26 @@ CalibrateGyro(float * biasWx, float * biasWy, float * biasWz)
         MPU9150DataGyroGetFloat(&g_sMPU9150Inst, gyro, gyro + 1,
                                 gyro + 2);
 
-        bias[0] += gyro[0];
-        bias[1] += gyro[1];
-        bias[2] += gyro[2];
+        //
+        // Get floating point version of acceleration in m/sec^2
+        //
+        MPU9150DataAccelGetFloat(&g_sMPU9150Inst, accel, accel + 1,
+                                accel + 2);
+
+        gyroBias[0] += gyro[0];
+        gyroBias[1] += gyro[1];
+        gyroBias[2] += gyro[2];
+        accelBias[0] += accel[0];
+        accelBias[1] += accel[1];
+        accelBias[2] += accel[2];
     }
 
-    *biasWx = bias[0] / GYRO_BIAS_SAMPLES;
-    *biasWy = bias[1] / GYRO_BIAS_SAMPLES;
-    *biasWz = bias[2] / GYRO_BIAS_SAMPLES;
+    *biasWx = gyroBias[0] / GYRO_BIAS_SAMPLES;
+    *biasWy = gyroBias[1] / GYRO_BIAS_SAMPLES;
+    *biasWz = gyroBias[2] / GYRO_BIAS_SAMPLES;
+    *biasAx = accelBias[0] / GYRO_BIAS_SAMPLES;
+    *biasAy = accelBias[1] / GYRO_BIAS_SAMPLES;
+    *biasAz = accelBias[2] / GYRO_BIAS_SAMPLES - 9.81;
 }
 
 //*****************************************************************************
@@ -623,8 +638,8 @@ main(void)
     //
     // Measures gyroscope bias.
     //
-    CalibrateGyro(g_sCompDCMInst.fBias, g_sCompDCMInst.fBias + 1,
-                  g_sCompDCMInst.fBias + 2);
+    CalibrateIMU(g_sCompDCMInst.fGyroBias, g_sCompDCMInst.fGyroBias + 1, g_sCompDCMInst.fGyroBias + 2,
+                 g_sCompDCMInst.fAccelBias, g_sCompDCMInst.fAccelBias + 1, g_sCompDCMInst.fAccelBias + 2);
 
     //
     // Initialize PD controller for hovering.
@@ -704,13 +719,10 @@ main(void)
                                pfAccel[2]);
             CompDCMGyroUpdate(&g_sCompDCMInst, pfGyro[0], pfGyro[1],
                               pfGyro[2]);
-            // DEBUGGING
-            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
             CompDCMUpdate(&g_sCompDCMInst);
-            // DEBUGGING
-            //GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x00);
         }
 
+        /*
         //
         // Increment the skip counter.  Skip counter is used so we do not
         // overflow the UART with data.
@@ -754,6 +766,13 @@ main(void)
             }
 
             //
+            // Calibrated accel. data
+            //
+            pfAccel[0] = g_sCompDCMInst.pfAccel[0];
+            pfAccel[1] = g_sCompDCMInst.pfAccel[1];
+            pfAccel[2] = g_sCompDCMInst.pfAccel[2];
+
+            //
             // Now drop back to using the data as a single array for the
             // purpose of decomposing the float into a integer part and a
             // fraction (decimal) part.
@@ -763,7 +782,7 @@ main(void)
                 //
                 // Convert float value to a integer truncating the decimal part.
                 //
-                i32IPart[ui32Idx] = (int32_t) pfData[ui32Idx];
+                i32IPart[ui32Idx] = (int32_t) (pfData[ui32Idx]);
 
                 //
                 // Multiply by 1000 to preserve first three decimal values.
@@ -823,7 +842,9 @@ main(void)
             UARTprintf("\033[19;50H%3d.%03d", i32IPart[14], i32FPart[14]);
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
         }
+        */
 
+        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
         //
         // Reads desired state via UART2 buffer.
         //
@@ -834,6 +855,7 @@ main(void)
         //
         ErrorToInput(&g_sPDControllerInst, &g_sCompDCMInst);
         PDContUpdatePWM(&g_sPDControllerInst, &g_sPWMInst);
+        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x0);
     }
 
     return 0;

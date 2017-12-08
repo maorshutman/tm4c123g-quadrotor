@@ -52,7 +52,7 @@
 // Weight for complementary filter.
 //
 //*****************************************************************************
-#define COMP_FACTOR             0.04
+#define COMP_FILTER_FACTOR             0.02
 
 //*****************************************************************************
 //
@@ -143,9 +143,9 @@ CompDCMAccelUpdate(tCompDCM *psDCM, float fAccelX, float fAccelY,
     //
     // Save the new accelerometer reading.
     //
-    psDCM->pfAccel[0] = fAccelX;
-    psDCM->pfAccel[1] = fAccelY;
-    psDCM->pfAccel[2] = fAccelZ;
+    psDCM->pfAccel[0] = fAccelX - psDCM->fAccelBias[0];
+    psDCM->pfAccel[1] = fAccelY - psDCM->fAccelBias[1];
+    psDCM->pfAccel[2] = fAccelZ - psDCM->fAccelBias[2];
 }
 
 //*****************************************************************************
@@ -179,9 +179,9 @@ CompDCMGyroUpdate(tCompDCM *psDCM, float fGyroX, float fGyroY, float fGyroZ)
     //
     // Save the new gyroscope reading.
     //
-    psDCM->pfGyro[0] = fGyroX - psDCM->fBias[0];
-    psDCM->pfGyro[1] = fGyroY - psDCM->fBias[1];
-    psDCM->pfGyro[2] = fGyroZ - psDCM->fBias[2];
+    psDCM->pfGyro[0] = fGyroX - psDCM->fGyroBias[0];
+    psDCM->pfGyro[1] = fGyroY - psDCM->fGyroBias[1];
+    psDCM->pfGyro[2] = fGyroZ - psDCM->fGyroBias[2];
 }
 
 //*****************************************************************************
@@ -416,34 +416,32 @@ CompDCMUpdate(tCompDCM *psDCM)
     float r32 = psDCM->pfAccel[1] / g;
     float r33 = psDCM->pfAccel[2] / g;
     float r11 = sqrtf(1.0f - r31 * r31);
+    float betaGrav = atan2f(-r31 , r11);
+    float gammaGrav = atan2f(r32 / cosf(betaGrav), r33 / cosf(betaGrav));
 
-    float alpha = atan2f(tempDCM[1][0], tempDCM[0][0]);
-    float beta = atan2f(-r31 , r11);
-    float gamma = atan2f(r32 / cosf(beta), r33 / cosf(beta));
+    //
+    // Compute Eulers form DCM.
+    //
+    float alphaDCM;
+    float betaDCM;
+    float gammaDCM;
+    CompDCMComputeEulers(tempDCM, &gammaDCM, &betaDCM, &alphaDCM);
 
-    float accDCM[3][3];
-    accDCM[0][0] = cosf(alpha) * cosf(beta);
-    accDCM[0][1] = cosf(alpha) * sinf(beta) * sinf(gamma) - sinf(alpha) * cosf(gamma);
-    accDCM[0][2] = cosf(alpha) * sinf(beta) * cosf(gamma) + sinf(alpha) * sinf(gamma);
-    accDCM[1][0] = sinf(alpha) * cosf(beta);
-    accDCM[1][1] = sinf(alpha) * sinf(beta) * sinf(gamma) + cosf(alpha) * cosf(gamma);
-    accDCM[1][2] = sinf(alpha) * sinf(beta) * cosf(gamma) - cosf(alpha) * sinf(gamma);
-    accDCM[2][0] = -sinf(beta);
-    accDCM[2][1] = cosf(beta) * sinf(gamma);
-    accDCM[2][2] = cosf(beta) * cosf(gamma);
+    //
+    // Apply complementary filter.
+    //
+    float betaCompFilter = (1.0 - COMP_FILTER_FACTOR) * betaDCM + COMP_FILTER_FACTOR * betaGrav;
+    float gammaCompFilter = (1.0 - COMP_FILTER_FACTOR) * gammaDCM + COMP_FILTER_FACTOR * gammaGrav;
 
-    // Update DCM using a complementary filter.
-    for (i = 0; i < 3; i++) {
-        for (j = 0; j < 3; j++) {
-            psDCM->ppfDCM[i][j] = (1 - COMP_FACTOR) * tempDCM[i][j] +
-                    COMP_FACTOR * accDCM[i][j];
-        }
-    }
+    //
+    // Recalculate DCM.
+    //
+    ComputeDCMFromEulers(psDCM->ppfDCM, gammaCompFilter, betaCompFilter, alphaDCM);
 
     //
     // Updates Euler angles.
     //
-    CompDCMComputeEulers(psDCM, psDCM->fEuler, psDCM->fEuler + 1,
+    CompDCMComputeEulers(psDCM->ppfDCM, psDCM->fEuler, psDCM->fEuler + 1,
                          psDCM->fEuler + 2);
 }
 
@@ -494,7 +492,7 @@ CompDCMMatrixGet(tCompDCM *psDCM, float ppfDCM[3][3])
 //
 //*****************************************************************************
 void
-CompDCMComputeEulers(tCompDCM *psDCM, float *pfRoll, float *pfPitch,
+CompDCMComputeEulers(float dcm[3][3], float *pfRoll, float *pfPitch,
                      float *pfYaw)
 {
     //
@@ -502,15 +500,15 @@ CompDCMComputeEulers(tCompDCM *psDCM, float *pfRoll, float *pfPitch,
     //
     if(pfRoll)
     {
-        *pfRoll = atan2f(psDCM->ppfDCM[2][1], psDCM->ppfDCM[2][2]);
+        *pfRoll = atan2f(dcm[2][1], dcm[2][2]);
     }
     if(pfPitch)
     {
-        *pfPitch = -asinf(psDCM->ppfDCM[2][0]);
+        *pfPitch = -asinf(dcm[2][0]);
     }
     if(pfYaw)
     {
-        *pfYaw = atan2f(psDCM->ppfDCM[1][0], psDCM->ppfDCM[0][0]);
+        *pfYaw = atan2f(dcm[1][0], dcm[0][0]);
     }
 }
 
@@ -632,6 +630,28 @@ CompDCMComputeQuaternion(tCompDCM *psDCM, float pfQuaternion[4])
         pfQuaternion[3] = fQz;
     }
 }
+
+//*****************************************************************************
+//
+//! Computes a DCM matrix from Euler angles.
+//!
+//! \return None.
+//
+//*****************************************************************************
+void
+ComputeDCMFromEulers(float dcm[3][3], float gamma, float beta, float alpha)
+{
+    dcm[0][0] = cosf(alpha) * cosf(beta);
+    dcm[0][1] = cosf(alpha) * sinf(beta) * sinf(gamma) - sinf(alpha) * cosf(gamma);
+    dcm[0][2] = cosf(alpha) * sinf(beta) * cosf(gamma) + sinf(alpha) * sinf(gamma);
+    dcm[1][0] = sinf(alpha) * cosf(beta);
+    dcm[1][1] = sinf(alpha) * sinf(beta) * sinf(gamma) + cosf(alpha) * cosf(gamma);
+    dcm[1][2] = sinf(alpha) * sinf(beta) * cosf(gamma) - cosf(alpha) * sinf(gamma);
+    dcm[2][0] = -sinf(beta);
+    dcm[2][1] = cosf(beta) * sinf(gamma);
+    dcm[2][2] = cosf(beta) * cosf(gamma);
+}
+
 
 //*****************************************************************************
 //

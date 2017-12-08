@@ -58,7 +58,12 @@ typedef struct
     //
     // Gyro bias.
     //
-    float fBias[3];
+    float fGyroBias[3];
+
+    //
+    // Accelerometer bias.
+    //
+    float fAccelBias[3];
 
     //
     // The time delta between updates to the DCM.
@@ -114,9 +119,10 @@ extern void CompDCMMagnetoUpdate(tCompDCM *psDCM, float fMagnetoX,
 extern void CompDCMStart(tCompDCM *psDCM);
 extern void CompDCMUpdate(tCompDCM *psDCM);
 extern void CompDCMMatrixGet(tCompDCM *psDCM, float ppfDCM[3][3]);
-extern void CompDCMComputeEulers(tCompDCM *psDCM, float *pfRoll,
+extern void CompDCMComputeEulers(float dcm[3][3], float *pfRoll,
                                  float *pfPitch, float *pfYaw);
 extern void CompDCMComputeQuaternion(tCompDCM *psDCM, float pfQuaternion[4]);
+extern void ComputeDCMFromEulers(float dcm[3][3], float alpha, float beta, float gamma);
 
 //*****************************************************************************
 //

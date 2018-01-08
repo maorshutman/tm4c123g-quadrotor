@@ -5,5 +5,5 @@ Hardware used:
 
 - MPU6050 IMU
 - HC12 serial radio transceiver
-- A2212/13T 1000KV brushless motor
+- A2212/13T 1000KV brushless motors
 - The ESC are not branded with standard functionality

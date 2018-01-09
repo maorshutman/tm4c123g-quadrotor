@@ -1,4 +1,7 @@
+
 //*****************************************************************************
+//
+// main.c - A tm4c123g based quadrotor flight controller.
 //
 //
 //*****************************************************************************
@@ -29,9 +32,6 @@
 #include "controller.h"
 #include "battery_adc.h"
 
-
-// DEBGGING
-float v;
 
 //*****************************************************************************
 //
@@ -722,7 +722,6 @@ main(void)
             CompDCMUpdate(&g_sCompDCMInst);
         }
 
-        /*
         //
         // Increment the skip counter.  Skip counter is used so we do not
         // overflow the UART with data.
@@ -842,7 +841,6 @@ main(void)
             UARTprintf("\033[19;50H%3d.%03d", i32IPart[14], i32FPart[14]);
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
         }
-        */
 
         GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
         //

@@ -32,13 +32,13 @@
 
 #define g                   9.81 // m * s^-2
 #define m                   0.66 // kg
-#define b                   5.0e-6 * 1.2  // N * Hz^-2, taken form Mellinger paper
+#define b                   5.4e-6 // N * m * Hz^-2, taken form Mellinger paper
 #define MOTOR_MASS          0.047 // kg
 #define ARM_LENGTH          0.25 // m
 #define ARM_MASS            0.043 // kg
-#define I_XX                0.00884 // kg * m^2
-#define I_YY                0.00884 * 1.05 // kg * m^2
-#define I_ZZ                0.0165 // kg * m^2
+#define I_XX                0.00884 // kg * m^2, 2*m_body*R^2/5 + 4*(l/2^0.5)^2*m_motor
+#define I_YY                0.00884 // kg * m^2, 2*m_body*R^2/5 + 4*(l/2^0.5)^2*m_motor
+#define I_ZZ                0.0165 // kg * m^2, 2*m_body*R^2/5 + 4*l^2*m_motor
 #define MAX_MOTOR_OMEGA_SQ  pow(2.0 * M_PI * 6360 / 60.0, 2) * 0.7 // max motor omega^2
 #define K                   (0.62 * 9.81) / pow(2 * M_PI * 6360 / 60, 2) // N * Hz^-2
 
@@ -47,8 +47,8 @@
 // PD parameters.
 //
 //*****************************************************************************
-#define KD                  3.0
-#define KP                  4.0
+#define KD                 40.0 // TODO
+#define KP                 0.0 // TODO
 
 
 //*****************************************************************************
@@ -62,7 +62,7 @@ InitPDController(tPDController * psPD)
     //
     // Initial thrust.
     //
-    psPD->fThrustZDir = 0.01; // in kg
+    psPD->fThrustZDir = 0.4; // in kg
 
     //
     // Desired angular state.
@@ -125,6 +125,17 @@ ErrorToInput(tPDController * psPD, tCompDCM * psDCM)
     if (omegaSq[3] > MAX_MOTOR_OMEGA_SQ)
         omegaSq[3] = MAX_MOTOR_OMEGA_SQ;
 
+    // DEBUGGING
+    // set minimal thrust
+    if (omegaSq[0] < (0.1 / K))
+            omegaSq[0] = (0.1 / K);
+    if (omegaSq[1] < (0.1 / K))
+                omegaSq[1] = (0.1 / K);
+    if (omegaSq[2] < (0.1 / K))
+                omegaSq[2] = (0.1 / K);
+    if (omegaSq[3] < (0.1 / K))
+                omegaSq[3] = (0.1 / K);
+
     psPD->fOmegaSq[0] = omegaSq[0];
     psPD->fOmegaSq[1] = omegaSq[1];
     psPD->fOmegaSq[2] = omegaSq[2];
@@ -165,10 +176,9 @@ CalcDutyCycle(float battV, float reqOmegaSq)
 {
     // TODO
     // add dependency on battery voltage
-    // for 11.1 V
+    // this is for 11.1 V
     float rpm = 60.0 * sqrtf(reqOmegaSq) / (2.0 * M_PI);
-    float dutyCycle = 1.08307724e-08 * rpm * rpm -2.86419236e-06 * rpm + 55.99494359e-02;
-    return dutyCycle;
+    return 4.82229155e-09 * rpm * rpm + 3.85170924e-05 * rpm + 4.92630283e-01;
 }
 
 
@@ -203,9 +213,9 @@ ReadDesiredState(tPDController * psPD, tPWM * psPWM)
     if(bufferCopy[1] < 10)
     {
         psPD->fThrustZDir -= delta;
-        if (psPD->fThrustZDir < 0.01)
+        if (psPD->fThrustZDir < 0.08)
         {
-            psPD->fThrustZDir = 0.01;
+            psPD->fThrustZDir = 0.08;
         }
     }
     else if(bufferCopy[1] > 240)
@@ -217,24 +227,24 @@ ReadDesiredState(tPDController * psPD, tPWM * psPWM)
         }
     }
 
-    delta = 0.001;
+    delta = 0.01;
     //
     // Yaw (alpha)
     //
     if(bufferCopy[2] < 10)
     {
         psPD->fDesState[2] -= delta;
-        if (psPD->fDesState[2] < -0.1)
+        if (psPD->fDesState[2] < -0.15)
         {
-            psPD->fDesState[2] = -0.1;
+            psPD->fDesState[2] = -0.15;
         }
     }
     else if(bufferCopy[2] > 240)
     {
         psPD->fDesState[2] += delta;
-        if (psPD->fDesState[2] > 0.1)
+        if (psPD->fDesState[2] > 0.15)
         {
-            psPD->fDesState[2] = 0.1;
+            psPD->fDesState[2] = 0.15;
         }
     }
 
@@ -244,17 +254,17 @@ ReadDesiredState(tPDController * psPD, tPWM * psPWM)
     if(bufferCopy[3] < 10)
     {
         psPD->fDesState[1] -= delta;
-        if (psPD->fDesState[1] < -0.1)
+        if (psPD->fDesState[1] < -0.15)
         {
-            psPD->fDesState[1] = -0.1;
+            psPD->fDesState[1] = -0.15;
         }
     }
     else if(bufferCopy[3] > 240)
     {
         psPD->fDesState[1] += delta;
-        if (psPD->fDesState[1] > 0.1)
+        if (psPD->fDesState[1] > 0.15)
         {
-            psPD->fDesState[1] = 0.1;
+            psPD->fDesState[1] = 0.15;
         }
     }
 
@@ -264,17 +274,17 @@ ReadDesiredState(tPDController * psPD, tPWM * psPWM)
     if(bufferCopy[4] < 10)
     {
         psPD->fDesState[0] -= delta;
-        if (psPD->fDesState[0] < -0.1)
+        if (psPD->fDesState[0] < -0.15)
         {
-            psPD->fDesState[0] = -0.1;
+            psPD->fDesState[0] = -0.15;
         }
     }
     else if(bufferCopy[4] > 240)
     {
         psPD->fDesState[0] += delta;
-        if (psPD->fDesState[0] > 0.1)
+        if (psPD->fDesState[0] > 0.15)
         {
-            psPD->fDesState[0] = 0.1;
+            psPD->fDesState[0] = 0.15;
         }
     }
 }

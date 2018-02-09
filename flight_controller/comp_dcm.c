@@ -143,9 +143,10 @@ CompDCMAccelUpdate(tCompDCM *psDCM, float fAccelX, float fAccelY,
     //
     // Save the new accelerometer reading.
     //
-    psDCM->pfAccel[0] = fAccelX - psDCM->fAccelBias[0];
-    psDCM->pfAccel[1] = fAccelY - psDCM->fAccelBias[1];
-    psDCM->pfAccel[2] = fAccelZ - psDCM->fAccelBias[2];
+    // TODO define these bias and scaling constants
+    psDCM->pfAccel[0] = 0.996f * (fAccelX - 0.42f);
+    psDCM->pfAccel[1] = 1.0f * (fAccelY + 0.09f);
+    psDCM->pfAccel[2] = 0.98f * (fAccelZ + 0.684f);
 }
 
 //*****************************************************************************
@@ -243,31 +244,26 @@ CompDCMStart(tCompDCM *psDCM)
     //
     // The size of gravity when the body is at rest.
     //
-    float g = sqrt(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
-                   psDCM->pfAccel[1] * psDCM->pfAccel[1] +
-                   psDCM->pfAccel[2] * psDCM->pfAccel[2]);
-
-    //
-    // Initially the elements of the rotation matrix.
-    //
-    float r31 = -psDCM->pfAccel[0] / g;
-    float r32 = psDCM->pfAccel[1] / g;
-    float r33 = psDCM->pfAccel[2] / g;
-    float r11  = sqrt(1.0f - r31 * r31);
+    float g = sqrtf(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
+                    psDCM->pfAccel[1] * psDCM->pfAccel[1] +
+                    psDCM->pfAccel[2] * psDCM->pfAccel[2]);
 
     //
     // The initial Tait-Bryan angles angles in Z-Y-X convention.
     // alpha is chosen to be 0 initially.
     //
-    float betaAngle = atan2f(-r31 , r11);
-    float gammaAngle = atan2f(r32 / cosf(betaAngle), r33 / cosf(betaAngle));
+    float r20 = psDCM->pfAccel[0] / g;
+    float r21 = psDCM->pfAccel[1] / g;
+    float r22 = psDCM->pfAccel[2] / g;
+    float betaAngle = asinf(-r20);
+    float gammaAngle = atan2f(r21, r22);
 
     //
     // Updates initial Euler angles.
     //
     psDCM->fEuler[0] = gammaAngle;
-    psDCM->fEuler[1] = -betaAngle;
-    psDCM->fEuler[2] = 0.0f;
+    psDCM->fEuler[1] = betaAngle;
+    psDCM->fEuler[2] = 0.0f; // alpha (yaw) initialized to 0.0
 
     //
     // Updates the initial DCM.
@@ -278,9 +274,9 @@ CompDCMStart(tCompDCM *psDCM)
     psDCM->ppfDCM[1][0] = 0.0f;
     psDCM->ppfDCM[1][1] = cosf(gammaAngle);
     psDCM->ppfDCM[1][2] = -sinf(gammaAngle);
-    psDCM->ppfDCM[2][0] = r31;
-    psDCM->ppfDCM[2][1] = r32;
-    psDCM->ppfDCM[2][2] = r33;
+    psDCM->ppfDCM[2][0] = r20;
+    psDCM->ppfDCM[2][1] = r21;
+    psDCM->ppfDCM[2][2] = r22;
 }
 
 //*****************************************************************************
@@ -405,19 +401,18 @@ CompDCMUpdate(tCompDCM *psDCM)
     //
     // The size of gravity when the body is at rest.
     //
-    float g = sqrt(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
-                   psDCM->pfAccel[1] * psDCM->pfAccel[1] +
-                   psDCM->pfAccel[2] * psDCM->pfAccel[2]);
+    float g = sqrtf(psDCM->pfAccel[0] * psDCM->pfAccel[0] +
+                    psDCM->pfAccel[1] * psDCM->pfAccel[1] +
+                    psDCM->pfAccel[2] * psDCM->pfAccel[2]);
 
     //
     // Attitude evaluation via gravity vector.
     //
-    float r31 = -psDCM->pfAccel[0] / g;
-    float r32 = psDCM->pfAccel[1] / g;
-    float r33 = psDCM->pfAccel[2] / g;
-    float r11 = sqrtf(1.0f - r31 * r31);
-    float betaGrav = atan2f(-r31 , r11);
-    float gammaGrav = atan2f(r32 / cosf(betaGrav), r33 / cosf(betaGrav));
+    float r20 = psDCM->pfAccel[0] / g;
+    float r21 = psDCM->pfAccel[1] / g;
+    float r22 = psDCM->pfAccel[2] / g;
+    float betaGrav = asinf(-r20);
+    float gammaGrav = atan2f(r21, r22);
 
     //
     // Compute Eulers form DCM.
@@ -498,17 +493,28 @@ CompDCMComputeEulers(float dcm[3][3], float *pfRoll, float *pfPitch,
     //
     // Compute the roll, pitch, and yaw as required.
     //
-    if(pfRoll)
+    if (dcm[2][0] < 1.0)
     {
-        *pfRoll = atan2f(dcm[2][1], dcm[2][2]);
+        if (dcm[2][0] > -1.0)
+        {
+            *pfPitch = asinf(-dcm[2][0]);
+            *pfYaw = atan2f(dcm[1][0], dcm[0][0]);
+            *pfRoll = atan2f(dcm[2][1], dcm[2][2]);
+        }
+        else // r20 = -1
+        {
+            // Not a unique solution: pfRoll − pfYaw = atan2(−r12,r11)
+            *pfPitch = M_PI / 2.0;
+            *pfYaw = -atan2f(-dcm[1][2], dcm[1][1]);
+            *pfRoll = 0.0;
+        }
     }
-    if(pfPitch)
+    else // r20 = 1
     {
-        *pfPitch = -asinf(dcm[2][0]);
-    }
-    if(pfYaw)
-    {
-        *pfYaw = atan2f(dcm[1][0], dcm[0][0]);
+        // Not a unique solution: pfRoll + pfYaw = atan2(−r12,r11)
+        *pfPitch = -M_PI / 2.0;
+        *pfYaw = atan2f(-dcm[1][2], dcm[1][1]);
+        *pfRoll = 0.0;
     }
 }
 

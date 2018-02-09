@@ -595,9 +595,11 @@ CalibrateIMU(float * biasWx, float * biasWy, float * biasWz,
     *biasWx = gyroBias[0] / GYRO_BIAS_SAMPLES;
     *biasWy = gyroBias[1] / GYRO_BIAS_SAMPLES;
     *biasWz = gyroBias[2] / GYRO_BIAS_SAMPLES;
-    *biasAx = accelBias[0] / GYRO_BIAS_SAMPLES;
-    *biasAy = accelBias[1] / GYRO_BIAS_SAMPLES;
-    *biasAz = accelBias[2] / GYRO_BIAS_SAMPLES - 9.81;
+
+    // DEBUGGING
+    *biasAx = 0.0;
+    *biasAy = 0.0;
+    *biasAz = 0.0;
 }
 
 //*****************************************************************************
@@ -666,6 +668,11 @@ main(void)
         {
             ROM_SysCtlSleep();
         }
+
+        // DEBUGGING
+        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
+        SysCtlDelay(0.0001 * SysCtlClockGet() / 3);
+        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x0);
 
         //
         // Clears the flag.
@@ -759,10 +766,10 @@ main(void)
             pfEulers[0] *= 57.295779513082320876798154814105f;
             pfEulers[1] *= 57.295779513082320876798154814105f;
             pfEulers[2] *= 57.295779513082320876798154814105f;
-            if(pfEulers[2] < 0)
-            {
-                pfEulers[2] += 360.0f;
-            }
+//            if(pfEulers[2] < 0)
+//            {
+//                pfEulers[2] += 360.0f;
+//            }
 
             //
             // Calibrated accel. data
@@ -842,7 +849,6 @@ main(void)
             UARTprintf("\033[19;68H%3d.%03d", i32IPart[15], i32FPart[15]);
         }
 
-        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x10);
         //
         // Reads desired state via UART2 buffer.
         //
@@ -853,7 +859,6 @@ main(void)
         //
         ErrorToInput(&g_sPDControllerInst, &g_sCompDCMInst);
         PDContUpdatePWM(&g_sPDControllerInst, &g_sPWMInst);
-        GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0x0);
     }
 
     return 0;

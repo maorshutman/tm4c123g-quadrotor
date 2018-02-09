@@ -61,7 +61,6 @@ extern void InitPDController(tPDController * psPD);
 extern void ErrorToInput(tPDController * psPD, tCompDCM * psDCM);
 extern void PDContUpdatePWM(tPDController * psPD, tPWM * psPWM);
 extern float CalcDutyCycle(float battV, float reqOmegaSq);
-//extern void ReadDesiredState(tPDController * psPD);
 extern void ReadDesiredState(tPDController * psPD, tPWM * psPWM);
 
 //*****************************************************************************

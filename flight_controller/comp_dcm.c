@@ -144,9 +144,9 @@ CompDCMAccelUpdate(tCompDCM *psDCM, float fAccelX, float fAccelY,
     // Save the new accelerometer reading.
     //
     // TODO define these bias and scaling constants
-    psDCM->pfAccel[0] = 0.996f * (fAccelX - 0.42f);
-    psDCM->pfAccel[1] = 1.0f * (fAccelY + 0.09f);
-    psDCM->pfAccel[2] = 0.98f * (fAccelZ + 0.684f);
+    psDCM->pfAccel[0] = 1.0f * (fAccelX - 0.55f);
+    psDCM->pfAccel[1] = 1.0f * (fAccelY + 0.1f);
+    psDCM->pfAccel[2] = 0.98f * (fAccelZ + 0.55f);
 }
 
 //*****************************************************************************

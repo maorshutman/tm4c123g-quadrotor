@@ -2,7 +2,7 @@
 This repository contains an implementation of a quadrotor flight controller and remote control based on the Texas Instruments tm4c123g microcontroller.
 
 <h3>Algorithmic design</h3>	
-<p>The flight controller uses the equations of motion of the quadrotor to implements a PD controller. The moments of inertia, mass and body dimensions need to be supplied.</p>
+<p>The flight controller uses the equations of motion of the quadrotor for a PD controller. The moments of inertia, mass and body dimensions need to be supplied.</p>
 
 Reference: 
 https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations

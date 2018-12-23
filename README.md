@@ -26,8 +26,8 @@ Remote control:
   -2 x Two axis thumbstick potentiometers</p>
 
 <h3>Remote control design</h3>
-<p>The remote control used HC12 serial radio transceivers operating at 9600 bytes/sec (operation range of ~500 m). The HC12 I/O is input and output is serial. The remote control needs to send thrust, yaw pitch and roll instructions. The thumbsticks potentiometers are not precise and thus allow allow only 3 states: increase value, decrease value and neutral.
-The serial data is 14 bytes long and the message format used used is as follows:</p>
+<p>The remote control uses HC12 serial radio transceivers operating at 9600 bytes/sec (operating range of ~500 m). The HC12 I/O is serial. The remote control needs to send thrust, yaw, pitch and roll instructions. The thumbsticks potentiometers are not precise and thus allow only 3 states: increase value, decrease value and neutral.
+The serial data is 14 bytes long and the message format used is as follows:</p>
 
 ‘s’, thrust, yaw, pitch, roll, _, _, _, _, _, _, _, message counter, ‘e’
 

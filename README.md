@@ -34,7 +34,7 @@ The serial data is 14 bytes long and the message format used used is as follows:
 Where thrust, yaw, pitch, roll are in [0, 255]. The underscores are currently unused bytes.
 
 <h3>System operation</h3>
-<p>On every startup of the flight controller the ECSs are calibrated. When the calibration ends the proelors start to rotate at a low angular velocity. At this stage the remote control can be used.</p>
+<p>On every startup of the flight controller the ECSs are calibrated. When the calibration ends the propellers start to rotate at a low angular velocity. At this stage the remote control can be used.</p>
 
 
 

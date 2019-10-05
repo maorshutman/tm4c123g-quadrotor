@@ -95,7 +95,6 @@ def error_to_input(params, state):
 
 
 def update_angular_velocity(params, state, torque_phi, torque_psi, torque_theta):
-
     # transformation of angular velocity in body frame to world frame
     world_to_body =\
         np.array([[1.0, 0.0, -np.sin(state.theta)],
@@ -136,7 +135,6 @@ def update_angular_velocity(params, state, torque_phi, torque_psi, torque_theta)
 
 
 def main():
-
     # desired orientation
     phi_des = 0.0 / (180.0 / np.pi)
     theta_des = 0.0 / (180.0 / np.pi)
@@ -166,7 +164,6 @@ def main():
 
     # run simulation
     for i in range(steps):
-
         # update angular velocities in world frame
         tmp_phi_dot = state.phi_dot
         tmp_theta_dot = state.theta_dot

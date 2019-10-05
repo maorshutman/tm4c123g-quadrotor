@@ -3,14 +3,6 @@ import numpy as np
 
 
 def eulers_to_dcm(dcm, theta, phi, psy):
-    """
-
-    :param dcm:
-    :param theta:
-    :param phi:
-    :param psy:
-    :return:
-    """
     dcm[0, 0] = np.cos(psy) * np.cos(theta) - np.sin(phi) * np.sin(psy) * np.sin(theta)
     dcm[0, 1] = -np.cos(phi) * np.sin(psy)
     dcm[0, 2] = np.cos(psy) * np.sin(theta) + np.cos(theta) * np.sin(phi) * np.sin(psy)
@@ -23,11 +15,6 @@ def eulers_to_dcm(dcm, theta, phi, psy):
 
 
 def dcm_to_eulers(r):
-    """
-
-    :param r:
-    :return:
-    """
     if r[2, 1] < 1.0:
         if r[2, 1] > -1.0:
             phi = np.arcsin(r[2, 1])
@@ -46,7 +33,6 @@ def dcm_to_eulers(r):
 
 
 def main():
-
     # read data
     f = open('gyro_data_mov_3.txt', 'r')
     w_x = np.array([])
@@ -129,10 +115,6 @@ def main():
     plt.legend(frameon=False)
     plt.ylim((-200.0, 200.0))
     plt.show()
-
-
-
-
 
 
 if __name__ == "__main__":
